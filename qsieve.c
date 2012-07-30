@@ -286,7 +286,7 @@ int initv(void)
     nbts=8*sizeof(int);
 
     printf("input number to be factored N= \n");
-    d=cinnum(NN,stdin); /* NNÊÇ´ı·Ö½âµÄÕûÊı */
+    d=cinnum(NN,stdin); /* NNæ˜¯å¾…åˆ†è§£çš„æ•´æ•° */
     if (isprime(NN))
     {
         printf("this number is prime!\n");
@@ -295,22 +295,22 @@ int initv(void)
 
 /* determine mm - optimal size of factor base */
 
-    if (d<8) mm=d; /* mm: Òò×Ó»ùµÄÀíÏë´óĞ¡ */
+    if (d<8) mm=d; /* mm: å› å­åŸºçš„ç†æƒ³å¤§å° */
     else  mm=25;
     if (d>20) mm=(d*d*d*d)/4096;
 
 /* only half the primes (on average) wil be used, so generate twice as
    many (+ a bit for luck) */
 
-    dp=(double)2*(double)(mm+100);  /* number of primes to generate */ /* dp:Éú³ÉËØÊıµÄÊıÁ¿ +100 *2¾ùÊÇÎªÁË¸ü¼Ó±£ÏÕ */
-    maxp=(int)(dp*(log(dp*log(dp)))); /* Rossers upper bound */ /* ÂŞËØÉÏ½ç* maxp:Éú³ÉËØÊı´óĞ¡µÄÉÏ½ç */
+    dp=(double)2*(double)(mm+100);  /* number of primes to generate */ /* dp:ç”Ÿæˆç´ æ•°çš„æ•°é‡ +100 *2å‡æ˜¯ä¸ºäº†æ›´åŠ ä¿é™© */
+    maxp=(int)(dp*(log(dp*log(dp)))); /* Rossers upper bound */ /* ç½—ç´ ä¸Šç•Œ* maxp:ç”Ÿæˆç´ æ•°å¤§å°çš„ä¸Šç•Œ */
     gprime(maxp);
 
     epr=(int *)mr_alloc(mm+1,sizeof(int));
   
     k=knuth(mm,epr,NN,DD);
 
-    if (nroot(DD,2,RR)) /* ÊÇÍêÈ«Æ½·½ÊıÖ±½Ó·µ»Ø */
+    if (nroot(DD,2,RR)) /* æ˜¯å®Œå…¨å¹³æ–¹æ•°ç›´æ¥è¿”å› */
     {
         printf("%dN is a perfect square!\n",k);
         printf("factors are\n");
@@ -390,9 +390,9 @@ int main()
     if (initv()<0) return 0;
 
     hmod=2*mlf+1;               /* set up hash table */
-    convert(hmod,TT); /* ÁîTT=hmod */
-    while (!isprime(TT)) decr(TT,2,TT); /* Ñ°ÕÒ²»´óÓÚTTµÄËØÊı */
-    hmod=size(TT); /* Áîhmod=TT */
+    convert(hmod,TT); /* ä»¤TT=hmod */
+    while (!isprime(TT)) decr(TT,2,TT); /* å¯»æ‰¾ä¸å¤§äºTTçš„ç´ æ•° */
+    hmod=size(TT); /* ä»¤hmod=TT */
     hmod2=hmod-2;
     for (k=0;k<hmod;k++) hash[k]=(-1);
 
@@ -402,7 +402,7 @@ int main()
     M=SSIZE*(long)NS;
     logm=0;
     la=M;
-    while ((la/=2)>0) logm++;   /* logm = log(M) */ /* ÒÔ2Îªµ× */
+    while ((la/=2)>0) logm++;   /* logm = log(M) */ /* ä»¥2ä¸ºåº• */
     rp[0]=logp[0]=0;
     for (k=1;k<=mm;k++)
     { /* find root mod each prime, and approx log of each prime */
