@@ -28,7 +28,7 @@ int knuth(int mm,int *epr,big N,big D)
     BOOL found;
     int i,j,bk,nk,kk,r,p;
     static int K[]={0,1,2,3,5,6,7,10,11,13,14,15,17,0};
-    top=(-10.0e0); // top = -10
+    top=(-10.0e0);
     found=FALSE;
     nk=0;
     bk=0;
@@ -181,8 +181,8 @@ BOOL gotcha(void)
         { /* match found so use as factorization */
             printf("\b\b\b\b\b\b*");
             fflush(stdout);
-            mad(XX,z[hp],XX,NN,NN,XX);
-            mad(YY,w[hp],YY,NN,NN,YY);
+            mad(XX,z[hp],XX,NN,NN,XX);// XX' = (XX * z[hp] + XX) % NN , NN' = (XX * z[hp] + XX) / NN, 
+            mad(YY,w[hp],YY,NN,NN,YY);// YY' = (YY * w[hp] + YY) % NN , NN' = ()
             for (n=0,rb=0,j=0;j<=mm;j++)
             {
                 t=(G[hp][n]>>rb);
@@ -286,7 +286,11 @@ int initv(void)
     nbts=8*sizeof(int);
 
     printf("input number to be factored N= \n");
+<<<<<<< HEAD
+    d=cinnum(NN,stdin);
+=======
     d=cinnum(NN,stdin); /* NN是待分解的整数 */
+>>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     if (isprime(NN))
     {
         printf("this number is prime!\n");
@@ -295,22 +299,35 @@ int initv(void)
 
 /* determine mm - optimal size of factor base */
 
+<<<<<<< HEAD
+    if (d<8) mm=d;
+=======
     if (d<8) mm=d; /* mm: 因子基的理想大小 */
+>>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     else  mm=25;
     if (d>20) mm=(d*d*d*d)/4096;
 
 /* only half the primes (on average) wil be used, so generate twice as
    many (+ a bit for luck) */
 
+<<<<<<< HEAD
+    dp=(double)2*(double)(mm+100);  /* number of primes to generate */
+    maxp=(int)(dp*(log(dp*log(dp)))); /* Rossers upper bound */
+=======
     dp=(double)2*(double)(mm+100);  /* number of primes to generate */ /* dp:生成素数的数量 +100 *2均是为了更加保险 */
     maxp=(int)(dp*(log(dp*log(dp)))); /* Rossers upper bound */ /* 罗素上界* maxp:生成素数大小的上界 */
+>>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     gprime(maxp);
 
     epr=(int *)mr_alloc(mm+1,sizeof(int));
   
     k=knuth(mm,epr,NN,DD);
 
+<<<<<<< HEAD
+    if (nroot(DD,2,RR))
+=======
     if (nroot(DD,2,RR)) /* 是完全平方数直接返回 */
+>>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     {
         printf("%dN is a perfect square!\n",k);
         printf("factors are\n");
@@ -383,16 +400,22 @@ int main()
     int k,S,r,s1,s2,s,NS,logm,ptr,threshold,epri;
     long M,la,lptr;
 #ifndef MR_FULLWIDTH
-    mip=mirsys(-36,0); /* ? */
+    mip=mirsys(-36,0);
 #else
-    mip=mirsys(-36,MAXBASE); /* ? */
+    mip=mirsys(-36,MAXBASE);
 #endif
     if (initv()<0) return 0;
 
     hmod=2*mlf+1;               /* set up hash table */
+<<<<<<< HEAD
+    convert(hmod,TT);
+    while (!isprime(TT)) decr(TT,2,TT); // TT -= 2
+    hmod=size(TT);
+=======
     convert(hmod,TT); /* 令TT=hmod */
     while (!isprime(TT)) decr(TT,2,TT); /* TT:=不大于TT的素数 */
     hmod=size(TT); /* 令hmod=TT */
+>>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     hmod2=hmod-2;
     for (k=0;k<hmod;k++) hash[k]=(-1);
 
@@ -402,7 +425,11 @@ int main()
     M=SSIZE*(long)NS; /* 以上四行做了一件事情:  M:=(50*mm+SSIZE-1)/SSIZE*SSIZE 即M为不小于50*mm的SSIZE的倍数中最小的 */
     logm=0;
     la=M;
+<<<<<<< HEAD
+    while ((la/=2)>0) logm++;   /* logm = log(M) */
+=======
     while ((la/=2)>0) logm++;   /* logm = log(M) */ /* 以2为底 */
+>>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     rp[0]=logp[0]=0;
     for (k=1;k<=mm;k++)
     { /* find root mod each prime, and approx log of each prime */
@@ -420,7 +447,7 @@ int main()
 
     jj=0;
     nlp=0;
-    premult(DD,2,DG);
+    premult(DD,2,DG); 
     nroot(DG,2,DG);
     
     lgconv(M,TT);
