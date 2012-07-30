@@ -391,7 +391,7 @@ int main()
 
     hmod=2*mlf+1;               /* set up hash table */
     convert(hmod,TT); /* 令TT=hmod */
-    while (!isprime(TT)) decr(TT,2,TT); /* 寻找不大于TT的素数 */
+    while (!isprime(TT)) decr(TT,2,TT); /* TT:=不大于TT的素数 */
     hmod=size(TT); /* 令hmod=TT */
     hmod2=hmod-2;
     for (k=0;k<hmod;k++) hash[k]=(-1);
@@ -399,15 +399,15 @@ int main()
     M=50*(long)mm;
     NS=(int)(M/SSIZE);
     if (M%SSIZE!=0) NS++;
-    M=SSIZE*(long)NS;
+    M=SSIZE*(long)NS; /* 以上四行做了一件事情:  M:=(50*mm+SSIZE-1)/SSIZE*SSIZE 即M为不小于50*mm的SSIZE的倍数中最小的 */
     logm=0;
     la=M;
     while ((la/=2)>0) logm++;   /* logm = log(M) */ /* 以2为底 */
     rp[0]=logp[0]=0;
     for (k=1;k<=mm;k++)
     { /* find root mod each prime, and approx log of each prime */
-        r=subdiv(DD,epr[k],TT);
-        rp[k]=sqrmp(r,epr[k]);
+        r=subdiv(DD,epr[k],TT); /* TT是临时变量 r=DD mod epr[k] */
+        rp[k]=sqrmp(r,epr[k]); /* rp[k]=sqrt(r) mod epr[k] */
         logp[k]=0;
         r=epr[k];
         while((r/=2)>0) logp[k]++;
