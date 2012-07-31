@@ -449,6 +449,7 @@ int main()
             r2[k]=smul(s2,r,epr[k]); /* r2[k] = s2*r mod epr[k] */
         }
 
+		/* 猜: ptr是否是对多项式Q的枚举? */
         for (ptr=(-NS);ptr<NS;ptr++)
         { /* sieve over next period */
             la=(long)ptr*SSIZE;

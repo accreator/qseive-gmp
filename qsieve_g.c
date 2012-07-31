@@ -5,14 +5,26 @@
  *   Math. Comp. Vol. 48, 177, Jan. 1987, pp329-339
  */
 
+#include <gmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h> 
-#include "miracl.h"
 
 #define SSIZE 100000    /* Maximum sieve size            */
 
-static big NN,TT,DD,RR,VV,PP,XX,YY,DG,IG,AA,BB;
+#define forever while(1)
+#define TRUE 1
+#define FALSE 0
+typedef mpz_t big;
+typedef char BOOL;
+#define MR_TOOBIG 0x7FFFFFFF
+typedef struct
+{
+    int *PRIMES;
+    int NTRY;
+} miracl;
+
+static big NN,TT,DD,RR,VV,PP,XX,YY,DG,IG,AA,BB,IIA,IIB,IIC;
 static big *x,*y,*z,*w;
 static unsigned int **EE,**G;
 static int *epr,*r1,*r2,*rp,*b,*pr,*e,*hash;
@@ -21,13 +33,217 @@ static int mm,mlf,jj,nbts,nlp,lp,hmod,hmod2;
 static BOOL partial;
 static miracl *mip;
 
+
+void premult(big x, int n, big z);
+int subdiv(big x, int n, big z);
+int remain(big x, int n);
+int spmd(int x, int n, int m);
+void copy(big x, big y);
+int size(big x);
+void convert(int n, big x);
+void expint(int a, int n, big x);
+void mad(big x, big y, big z, big w, big q, big r);
+int cotnum(big x, FILE *fout);
+void divide(big x, big y, big z);
+void add(big x, big y, big z);
+int egcd(big x, big y, big z);
+BOOL isprime(big x);
+void subtract(big x, big y, big z);
+int compare(big x, big y);
+void absol(big x, big y);
+void multiply(big x, big y, big z);
+void lgconv(long n, big x);
+int invers(int x, int y);
+int sqrmp(int x, int m);
+void gprime(int maxp);
+void incr(big x, int n, big z);
+void decr(big x, int n, big z);
+BOOL nroot(big x, int n, big w);
+void negify(big x, big y);
+int logb2(big x);
+void powmod(big x, big y, big n, big w);
+
+void premult(big x, int n, big z)
+{
+    mpz_mul_si(z, x, n);
+}
+
+int subdiv(big x, int n, big z)
+{
+    return mpz_tdiv_q_ui(z, x, n);
+}
+
+int remain(big x, int n)
+{
+    return mpz_tdiv_r_ui(IIA, x, n);
+}
+
+int spmd(int x, int n, int m)
+{
+    long long ans = 1;
+    long long t = x;
+    while(n > 0)
+    {
+        if(n & 1) ans = (ans * t) % m;
+        t = (t * t) % m;
+        n >>= 1;
+    }
+    return (int)ans;
+}
+
+void copy(big x, big y)
+{
+    mpz_set(y, x);
+}
+
+int size(big x)
+{
+    int t;
+    t = mpz_get_si(x);
+    if(mpz_fits_slong_p(x)) return t;
+    return (t<0 ? -MR_TOOBIG : +MR_TOOBIG);
+}
+
+void convert(int n, big x)
+{
+    mpz_set_si(x, n);
+}
+
+void expint(int a, int n, big x)
+{
+    mpz_ui_pow_ui(x, a, n);
+}
+
+void mad(big x, big y, big z, big w, big q, big r)
+{
+    multiply(x, y, IIA);
+    if(x != z && y != z) add(IIA, z, IIA);
+        
+    if(w != q)
+    {
+        divide(IIA, w, q);
+    }
+    if(q != r)
+    {
+        mpz_tdiv_r(r, IIA, w);
+    }
+}
+
+int cotnum(big x, FILE *fout)
+{
+    ;
+}
+
+void divide(big x, big y, big z)
+{
+    mpz_tdiv_q(z, x, y);
+}
+
+void add(big x, big y, big z)
+{
+    mpz_add(z, x, y);
+}
+
+int egcd(big x, big y, big z)
+{
+    mpz_gcd(z, x, y);
+    return size(z);
+}
+
+BOOL isprime(big x)
+{
+    mpz_probab_prime_p(x, mip->NTRY);
+}
+
+void subtract(big x, big y, big z)
+{
+    mpz_sub(z, x, y);
+}
+
+int compare(big x, big y)
+{
+    int t;
+    t = mpz_cmp(x, y);
+    if(t > 0) return 1;
+    if(t < 0) return -1;
+    return 0;
+}
+
+void absol(big x, big y)
+{
+    mpz_abs(y, x);
+}
+
+void multiply(big x, big y, big z)
+{
+    mpz_mul(z, x, y);
+}
+
+void lgconv(long n, big x)
+{
+    convert(n, x);
+}
+
+int invers(int x, int y)
+{
+    convert(x, IIA);
+    convert(y, IIB);
+    mpz_invert(IIC, IIA, IIB);
+    return size(IIC);
+}
+
+int sqrmp(int x, int m)
+{
+    convert(x, IIA);
+    convert(m, IIB);
+    mpz_sqrt(IIA, IIA);
+    mpz_tdiv_r(IIC, IIA, IIB);
+    return size(IIC);
+}
+
+void gprime(int maxp)
+{
+    ;
+}
+
+void incr(big x, int n, big z)
+{
+    mpz_add_ui(z, x, n);
+}
+
+void decr(big x, int n, big z)
+{
+    mpz_sub_ui(z, x, n);
+}
+
+BOOL nroot(big x, int n, big w)
+{
+    mpz_root(w, x, n);
+}
+
+void negify(big x, big y)
+{
+    mpz_neg(y, x);
+}
+
+int logb2(big x)
+{
+    return mpz_sizeinbase(x, 2);
+}
+
+void powmod(big x, big y, big n, big w)
+{
+    mpz_powm_sec(w, x, y, n);
+}
+
+
 int knuth(int mm,int *epr,big N,big D)
 { /* Input number to be factored N and find best multiplier k  *
    * for use over a factor base epr[] of size mm.  Set D=k.N.  */
     double dp,fks,top;
     BOOL found;
     int i,j,bk,nk,kk,r,p;
-    static int K[]={0,1,2,3,5,6,7,10,11,13,14,15,17,0}; //kk取遍K数组
+    static int K[]={0,1,2,3,5,6,7,10,11,13,14,15,17,0};
     top=(-10.0e0);
     found=FALSE;
     nk=0;
@@ -38,7 +254,7 @@ int knuth(int mm,int *epr,big N,big D)
     { /* search for best Knuth-Schroepel multiplier */
         kk=K[++nk];
         if (kk==0)
-        { /* finished */ // 把最大的估计值对应的部分再进行一次求素数而不是直接return
+        { /* finished */
             kk=K[bk];
             found=TRUE;
         }
@@ -50,19 +266,19 @@ int knuth(int mm,int *epr,big N,big D)
         fks-=log((double)kk)/(2.0e0);
         i=0;
         j=1;
-        while (j<mm) // 求kk*N的前mm个质数，在这些质数下勒让德符号是0 or 1阿
+        while (j<mm)
         { /* select small primes */
             p=mip->PRIMES[++i];
             r=remain(D,p);
-            if (spmd(r,(p-1)/2,p)<=1) //勒让德符号
+            if (spmd(r,(p-1)/2,p)<=1)
             { /* use only if Jacobi symbol = 0 or 1 */
-                epr[++j]=p; 
+                epr[++j]=p;
                 dp=(double)p;
                 if (kk%p==0) fks+=log(dp)/dp;
                 else         fks+=2*log(dp)/(dp-1.0e0);
             }
         }
-        if (fks>top) 
+        if (fks>top)
         { /* find biggest fks */
             top=fks;
             bk=nk;
@@ -75,38 +291,38 @@ BOOL factored(long lptr,big T)
 { /* factor quadratic residue */
     BOOL facted;
     int i,j,r,st;  
-    partial=FALSE; // 被分成两部分
-    facted=FALSE; // 可以分解
+    partial=FALSE;
+    facted=FALSE;
     for (j=1;j<=mm;j++)
     { /* now attempt complete factorisation of T */
         r=(int)(lptr%epr[j]);
-        if (r<0) r+=epr[j]; 		/*暂时上下文相关*/
+        if (r<0) r+=epr[j];
         if (r!=r1[j] && r!=r2[j]) continue;
-        while (subdiv(T,epr[j],XX)==0) // XX = T/epr[j]，尝试对 T 用 epr[j] 做质因数分解
+        while (subdiv(T,epr[j],XX)==0)
         { /* cast out epr[j] */
-            e[j]++; //指数+1
-            copy(XX,T); //T = XX，继续做
+            e[j]++;
+            copy(XX,T);
         }
-        st=size(T);// 如果T fits in int那么 st 存的就是 T，否则是一个MAX
-        if (st==1) // 被当前的epr[j]分解成1了
+        st=size(T);
+        if (st==1)
         {
            facted=TRUE;
-           break; // 直接返回true了
+           break;
         }
-        if (size(XX)<=epr[j]) // XX 保存的是最后一次 T/epr[j] 的结果，尽管epr[j]可能不整除 T
-        { /* st is prime < epr[mm]^2 */ // 如果成功进了这一步，那么循环一定被break了
+        if (size(XX)<=epr[j])
+        { /* st is prime < epr[mm]^2 */
             if (st>=MR_TOOBIG || (st/epr[mm])>(1+mlf/50)) break;
             if (st<=epr[mm])
                 for (i=j;i<=mm;i++)
-                if (st==epr[i])		/* 这部分是想说当前剩下的数比 epr中最大的那个要小，那么就找找看后面的*/
+                if (st==epr[i])
                 {
                     e[i]++;
                     facted=TRUE;
                     break;
                 }
             if (facted) break;
-            lp=st;  /* factored with large prime */ // lp是个全局变量
-            partial=TRUE; // 说明被部分分解了
+            lp=st;  /* factored with large prime */
+            partial=TRUE;
             facted=TRUE;
             break;
         }
@@ -114,7 +330,7 @@ BOOL factored(long lptr,big T)
     return facted;
 }
 
-BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
+BOOL gotcha(void)
 { /* use new factorisation */
     int r,j,i,k,n,rb,had,hp;
     unsigned int t;
@@ -136,20 +352,34 @@ BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
         }
         if (!found && nlp>=mlf) return FALSE;
     }
-    copy(PP,XX);	// XX = PP
-    convert(1,YY);	// YY=1 
+    copy(PP,XX);
+    convert(1,YY);
     for (k=1;k<=mm;k++)
     { /* build up square part in YY  *
        * reducing e[k] to 0s and 1s */
         if (e[k]<2) continue;
-        r=e[k]/2;	// 开根号
-        e[k]%=2;	// 模2给异或方程组用
-        expint(epr[k],r,TT); 
-        multiply(TT,YY,YY); // YY = YY * epr[k]的r次方，把这一侧的数字乘出来
+        r=e[k]/2;
+        e[k]%=2;
+        expint(epr[k],r,TT);
+        multiply(TT,YY,YY);
     }
-
+/* debug only 
+	printf("\nX= ");
+    cotnum(XX,stdout);
+	printf("Y= ");
+    cotnum(YY,stdout);
+    if (e[0]==1) printf("-1");
+    else printf("1");
+    for (k=1;k<=mm;k++)
+    {
+        if (e[k]==0) continue;
+        printf(".%d",epr[k]);
+    }
+    if (partial) printf(".%d\n",lp);
+    else printf("\n");
+*/
     if (partial)
-    { /* factored with large prime */ // 在构造异或方程组吧
+    { /* factored with large prime */
         if (!found)
         { /* store new partial factorization */
             hash[had]=nlp;
@@ -158,8 +388,8 @@ BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
             copy(YY,w[nlp]);
             for (n=0,rb=0,j=0;j<=mm;j++)
             {
-                G[nlp][n]|=((e[j]&1)<<rb); // 压位，为了速度
-                if (++rb==nbts) n++,rb=0;  // 压nbts=32位
+                G[nlp][n]|=((e[j]&1)<<rb);
+                if (++rb==nbts) n++,rb=0;
             }
             nlp++;
         }
@@ -181,7 +411,7 @@ BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
                 }
                 if (++rb==nbts) n++,rb=0;
             }
-            premult(YY,lp,YY); 
+            premult(YY,lp,YY);
             divide(YY,NN,NN);
         }
     }
@@ -231,7 +461,16 @@ BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
             printf("%5d",jj);
         }
     }
-
+/*
+    for (i=0;i<mm;i++)
+    {
+        for (j=0;j<1+mm/(8*sizeof(int));j++)
+        {
+            printf("%x",EE[i][j]);
+        }
+        printf("\n");
+    }
+*/
     if (found)
     { /* check for false alarm */
         printf("\ntrying...\n");
@@ -263,7 +502,7 @@ int initv(void)
     nbts=8*sizeof(int);
 
     printf("input number to be factored N= \n");
-    d=cinnum(NN,stdin); /* NN是待分解的整数 */
+    d=cinnum(NN,stdin);
     if (isprime(NN))
     {
         printf("this number is prime!\n");
@@ -272,22 +511,22 @@ int initv(void)
 
 /* determine mm - optimal size of factor base */
 
-    if (d<8) mm=d; /* mm: 因子基的理想大小 */
+    if (d<8) mm=d;
     else  mm=25;
     if (d>20) mm=(d*d*d*d)/4096;
 
 /* only half the primes (on average) wil be used, so generate twice as
    many (+ a bit for luck) */
 
-    dp=(double)2*(double)(mm+100);  /* number of primes to generate */ /* dp:生成素数的数量 +100 *2均是为了更加保险 */
-    maxp=(int)(dp*(log(dp*log(dp)))); /* Rossers upper bound */ /* 罗素上界* maxp:生成素数大小的上界 */
+    dp=(double)2*(double)(mm+100);  /* number of primes to generate */
+    maxp=(int)(dp*(log(dp*log(dp)))); /* Rossers upper bound */
     gprime(maxp);
 
     epr=(int *)mr_alloc(mm+1,sizeof(int));
   
     k=knuth(mm,epr,NN,DD);
 
-    if (nroot(DD,2,RR)) /* 是完全平方数直接返回 */
+    if (nroot(DD,2,RR))
     {
         printf("%dN is a perfect square!\n",k);
         printf("factors are\n");
@@ -367,24 +606,24 @@ int main()
     if (initv()<0) return 0;
 
     hmod=2*mlf+1;               /* set up hash table */
-    convert(hmod,TT); /* 令TT=hmod */
-    while (!isprime(TT)) decr(TT,2,TT); /* TT:=不大于TT的素数 */
-    hmod=size(TT); /* 令hmod=TT */
+    convert(hmod,TT);
+    while (!isprime(TT)) decr(TT,2,TT);
+    hmod=size(TT);
     hmod2=hmod-2;
     for (k=0;k<hmod;k++) hash[k]=(-1);
 
     M=50*(long)mm;
     NS=(int)(M/SSIZE);
     if (M%SSIZE!=0) NS++;
-    M=SSIZE*(long)NS; /* 以上四行:  M:=NS*SSIZE，其中NS=(50*mm+SSIZE-1)/SSIZE 即M为不小于50*mm的SSIZE的倍数中最小的 */
+    M=SSIZE*(long)NS;
     logm=0;
     la=M;
-    while ((la/=2)>0) logm++;   /* logm = log(M) */ /* 以2为底 */
+    while ((la/=2)>0) logm++;   /* logm = log(M) */
     rp[0]=logp[0]=0;
     for (k=1;k<=mm;k++)
     { /* find root mod each prime, and approx log of each prime */
-        r=subdiv(DD,epr[k],TT); /* TT是临时变量 r=DD mod epr[k] */
-        rp[k]=sqrmp(r,epr[k]); /* rp[k] = sqrt(r) mod epr[k] = sqrt(DD mod epr[k]) mod epr[k]*/
+        r=subdiv(DD,epr[k],TT);
+        rp[k]=sqrmp(r,epr[k]);
         logp[k]=0;
         r=epr[k];
         while((r/=2)>0) logp[k]++;
@@ -397,56 +636,54 @@ int main()
 
     jj=0;
     nlp=0;
-
-    premult(DD,2,DG); 
-    nroot(DG,2,DG); /* 以上两行: DG=sqrt(DD*2) */
+    premult(DD,2,DG);
+    nroot(DG,2,DG);
     
     lgconv(M,TT);
     divide(DG,TT,DG);
-    nroot(DG,2,DG); /* 以上三行: DG=sqrt(DG/M) */
-    if (subdiv(DG,2,TT)==0) incr(DG,1,DG); /* DG若可整除2，则自增1 */
-    if (subdiv(DG,4,TT)==1) incr(DG,2,DG); /* DG若模4余1，则自增2 */ /* 实际上这两行是令DG等于不小余DG的数中模4余3的最小的数 */
-
+    nroot(DG,2,DG);
+    if (subdiv(DG,2,TT)==0) incr(DG,1,DG);
+    if (subdiv(DG,4,TT)==1) incr(DG,2,DG);
     printf("working...     0");
 
     forever
     { /* try a new polynomial */
-        r=mip->NTRY; 
-        mip->NTRY=1;         /* speed up search for prime */ /* 将素数测试次数改为1，以提高速度 */
+        r=mip->NTRY;
+        mip->NTRY=1;         /* speed up search for prime */
         do
         { /* looking for suitable prime DG = 3 mod 4 */
             do {
                incr(DG,4,DG);
             } while(!isprime(DG));
             decr(DG,1,TT);
-            subdiv(TT,2,TT); /* 以上两行: TT=(DG-1)/2 其中DG是素数 */
-            powmod(DD,TT,DG,TT);  /* check D is quad residue */ /* TT=DD^TT mod DG */
-        } while (size(TT)!=1); /* 如果DD是二次剩余，则停止 */
-        mip->NTRY=r; /* 恢复默认的素数测试次数 */
+            subdiv(TT,2,TT);
+            powmod(DD,TT,DG,TT);  /* check D is quad residue */
+        } while (size(TT)!=1);
+        mip->NTRY=r;
         incr(DG,1,TT);
         subdiv(TT,4,TT);
-        powmod(DD,TT,DG,BB); /* 以上三行: BB=DD^((DG+1)/4) mod DG */
-        negify(DD,TT); 
+        powmod(DD,TT,DG,BB);
+        negify(DD,TT);
         mad(BB,BB,TT,DG,TT,TT);
-        negify(TT,TT); /* 以上三行: TT=-(BB*BB-DD)/DG */
-        premult(BB,2,AA); /* AA=2*BB */
-        xgcd(AA,DG,AA,AA,AA); /* AA = 1/AA mod DG */
-        mad(AA,TT,TT,DG,DG,AA); /* AA = AA*TT mod DG */
-        multiply(AA,DG,TT); /* TT=AA*DG */
-        add(BB,TT,BB);         /** BB^2 = DD mod DG^2 */
-        multiply(DG,DG,AA);    /** AA = DG*DG         */
-        xgcd(DG,DD,IG,IG,IG);  /** IG = 1/DG mod DD  */
+        negify(TT,TT);
+        premult(BB,2,AA);
+        xgcd(AA,DG,AA,AA,AA);
+        mad(AA,TT,TT,DG,DG,AA);
+        multiply(AA,DG,TT);
+        add(BB,TT,BB);        /* BB^2 = DD mod DG^2 */
+        multiply(DG,DG,AA);   /* AA = DG*DG         */
+        xgcd(DG,DD,IG,IG,IG); /* IG = 1/DG mod DD  */
 
         r1[0]=r2[0]=0;
         for (k=1;k<=mm;k++) 
         { /* find roots of quadratic mod each prime */
-            s=subdiv(BB,epr[k],TT); /* s=BB mod epr[k] */
-            r=subdiv(AA,epr[k],TT); /* r=AA mod epr[k] */
-            r=invers(r,epr[k]);     /* 以上两行: r = 1/AA mod p */
+            s=subdiv(BB,epr[k],TT);
+            r=subdiv(AA,epr[k],TT);
+            r=invers(r,epr[k]);     /* r = 1/AA mod p */
             s1=(epr[k]-s+rp[k]);
-            s2=(epr[k]-s+epr[k]-rp[k]); 
-            r1[k]=smul(s1,r,epr[k]); /* r1[k] = s1*r mod epr[k] */
-            r2[k]=smul(s2,r,epr[k]); /* r2[k] = s2*r mod epr[k] */
+            s2=(epr[k]-s+epr[k]-rp[k]);
+            r1[k]=smul(s1,r,epr[k]);
+            r2[k]=smul(s2,r,epr[k]);
         }
 
         for (ptr=(-NS);ptr<NS;ptr++)
@@ -465,8 +702,7 @@ int main()
                 if (s2<0) s2+=epri;
 
             /* these loops are time-critical */
-  			/* 这部分是筛法的主要部分，数组下标表示多项式Q(x)的参数x */ 
-			/* s1与s2是两个Q(x)=0 (mod p)的解 */
+   
                 for (j=s1;j<SSIZE;j+=epri) sieve[j]+=logpi;
                 if (s1==s2) continue;
                 for (j=s2;j<SSIZE;j+=epri) sieve[j]+=logpi;
