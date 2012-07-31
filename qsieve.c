@@ -440,13 +440,13 @@ int main()
         r1[0]=r2[0]=0;
         for (k=1;k<=mm;k++) 
         { /* find roots of quadratic mod each prime */
-            s=subdiv(BB,epr[k],TT);
-            r=subdiv(AA,epr[k],TT);
-            r=invers(r,epr[k]);     /* r = 1/AA mod p */
+            s=subdiv(BB,epr[k],TT); // TT = BB / epr[k], s = BB mod epr[k]
+            r=subdiv(AA,epr[k],TT); // TT = AA / epr[k], r = AA mod epr[k]
+            r=invers(r,epr[k]);     // r = 1/r mod epr[k]
             s1=(epr[k]-s+rp[k]);
             s2=(epr[k]-s+epr[k]-rp[k]);
-            r1[k]=smul(s1,r,epr[k]);
-            r2[k]=smul(s2,r,epr[k]);
+            r1[k]=smul(s1,r,epr[k]); // r1[k] = s1 * r (mod epr[k])
+            r2[k]=smul(s2,r,epr[k]); // r2[k] = s2 * r (mod epr[k])
         }
 
         for (ptr=(-NS);ptr<NS;ptr++)
