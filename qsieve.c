@@ -407,7 +407,7 @@ int main()
     for (k=1;k<=mm;k++)
     { /* find root mod each prime, and approx log of each prime */
         r=subdiv(DD,epr[k],TT); /* TT是临时变量 r=DD mod epr[k] */
-        rp[k]=sqrmp(r,epr[k]); /* rp[k]=sqrt(r) mod epr[k] */
+        rp[k]=sqrmp(r,epr[k]); /* rp[k] = sqrt(r) mod epr[k] = sqrt(DD mod epr[k]) mod epr[k]*/
         logp[k]=0;
         r=epr[k];
         while((r/=2)>0) logp[k]++;
@@ -420,19 +420,19 @@ int main()
 
     jj=0;
     nlp=0;
-    premult(DD,2,DG);
-    nroot(DG,2,DG);
+    premult(DD,2,DG); 
+    nroot(DG,2,DG); /* 以上两行: DG=sqrt(DD*2) */
     
     lgconv(M,TT);
     divide(DG,TT,DG);
-    nroot(DG,2,DG);
-    if (subdiv(DG,2,TT)==0) incr(DG,1,DG);
-    if (subdiv(DG,4,TT)==1) incr(DG,2,DG);
+    nroot(DG,2,DG); /* 以上三行: DG=sqrt(DG/M) */
+    if (subdiv(DG,2,TT)==0) incr(DG,1,DG); /* DG若可整除2，则自增1 */
+    if (subdiv(DG,4,TT)==1) incr(DG,2,DG); /* DG若模4余1，则自增2 */ /* 实际上这两行是令DG等于不小余DG的数中模4余3的最小的数 */
     printf("working...     0");
 
     forever
     { /* try a new polynomial */
-        r=mip->NTRY;
+        r=mip->NTRY; 
         mip->NTRY=1;         /* speed up search for prime */
         do
         { /* looking for suitable prime DG = 3 mod 4 */
