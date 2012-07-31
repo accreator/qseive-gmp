@@ -286,11 +286,7 @@ int initv(void)
     nbts=8*sizeof(int);
 
     printf("input number to be factored N= \n");
-<<<<<<< HEAD
-    d=cinnum(NN,stdin);
-=======
     d=cinnum(NN,stdin); /* NN是待分解的整数 */
->>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     if (isprime(NN))
     {
         printf("this number is prime!\n");
@@ -299,35 +295,22 @@ int initv(void)
 
 /* determine mm - optimal size of factor base */
 
-<<<<<<< HEAD
-    if (d<8) mm=d;
-=======
     if (d<8) mm=d; /* mm: 因子基的理想大小 */
->>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     else  mm=25;
     if (d>20) mm=(d*d*d*d)/4096;
 
 /* only half the primes (on average) wil be used, so generate twice as
    many (+ a bit for luck) */
 
-<<<<<<< HEAD
-    dp=(double)2*(double)(mm+100);  /* number of primes to generate */
-    maxp=(int)(dp*(log(dp*log(dp)))); /* Rossers upper bound */
-=======
     dp=(double)2*(double)(mm+100);  /* number of primes to generate */ /* dp:生成素数的数量 +100 *2均是为了更加保险 */
     maxp=(int)(dp*(log(dp*log(dp)))); /* Rossers upper bound */ /* 罗素上界* maxp:生成素数大小的上界 */
->>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     gprime(maxp);
 
     epr=(int *)mr_alloc(mm+1,sizeof(int));
   
     k=knuth(mm,epr,NN,DD);
 
-<<<<<<< HEAD
-    if (nroot(DD,2,RR))
-=======
     if (nroot(DD,2,RR)) /* 是完全平方数直接返回 */
->>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     {
         printf("%dN is a perfect square!\n",k);
         printf("factors are\n");
@@ -407,29 +390,19 @@ int main()
     if (initv()<0) return 0;
 
     hmod=2*mlf+1;               /* set up hash table */
-<<<<<<< HEAD
-    convert(hmod,TT);
-    while (!isprime(TT)) decr(TT,2,TT); // TT -= 2
-    hmod=size(TT);
-=======
     convert(hmod,TT); /* 令TT=hmod */
     while (!isprime(TT)) decr(TT,2,TT); /* TT:=不大于TT的素数 */
     hmod=size(TT); /* 令hmod=TT */
->>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     hmod2=hmod-2;
     for (k=0;k<hmod;k++) hash[k]=(-1);
 
     M=50*(long)mm;
     NS=(int)(M/SSIZE);
     if (M%SSIZE!=0) NS++;
-    M=SSIZE*(long)NS; /* 以上四行做了一件事情:  M:=(50*mm+SSIZE-1)/SSIZE*SSIZE 即M为不小于50*mm的SSIZE的倍数中最小的 */
+    M=SSIZE*(long)NS; /* 以上四行:  M:=NS*SSIZE，其中NS=(50*mm+SSIZE-1)/SSIZE 即M为不小于50*mm的SSIZE的倍数中最小的 */
     logm=0;
     la=M;
-<<<<<<< HEAD
-    while ((la/=2)>0) logm++;   /* logm = log(M) */
-=======
     while ((la/=2)>0) logm++;   /* logm = log(M) */ /* 以2为底 */
->>>>>>> c143f15f41bd94752b2532418c80088f5b9ffd3e
     rp[0]=logp[0]=0;
     for (k=1;k<=mm;k++)
     { /* find root mod each prime, and approx log of each prime */
@@ -447,58 +420,56 @@ int main()
 
     jj=0;
     nlp=0;
+
     premult(DD,2,DG); 
-<<<<<<< HEAD
     nroot(DG,2,DG); /* 以上两行: DG=sqrt(DD*2) */
-=======
-    nroot(DG,2,DG);
->>>>>>> f9cc65b6ef21484a5d5bb8d54d853d310aadcee3
     
     lgconv(M,TT);
     divide(DG,TT,DG);
     nroot(DG,2,DG); /* 以上三行: DG=sqrt(DG/M) */
     if (subdiv(DG,2,TT)==0) incr(DG,1,DG); /* DG若可整除2，则自增1 */
     if (subdiv(DG,4,TT)==1) incr(DG,2,DG); /* DG若模4余1，则自增2 */ /* 实际上这两行是令DG等于不小余DG的数中模4余3的最小的数 */
+
     printf("working...     0");
 
     forever
     { /* try a new polynomial */
         r=mip->NTRY; 
-        mip->NTRY=1;         /* speed up search for prime */
+        mip->NTRY=1;         /* speed up search for prime */ /* 将素数测试次数改为1，以提高速度 */
         do
         { /* looking for suitable prime DG = 3 mod 4 */
             do {
                incr(DG,4,DG);
             } while(!isprime(DG));
             decr(DG,1,TT);
-            subdiv(TT,2,TT);
-            powmod(DD,TT,DG,TT);  /* check D is quad residue */
-        } while (size(TT)!=1);
-        mip->NTRY=r;
+            subdiv(TT,2,TT); /* 以上两行: TT=(DG-1)/2 其中DG是素数 */
+            powmod(DD,TT,DG,TT);  /* check D is quad residue */ /* TT=DD^TT mod DG */
+        } while (size(TT)!=1); /* 如果DD是二次剩余，则停止 */
+        mip->NTRY=r; /* 恢复默认的素数测试次数 */
         incr(DG,1,TT);
         subdiv(TT,4,TT);
-        powmod(DD,TT,DG,BB);
-        negify(DD,TT);
+        powmod(DD,TT,DG,BB); /* 以上三行: BB=DD^((DG+1)/4) mod DG */
+        negify(DD,TT); 
         mad(BB,BB,TT,DG,TT,TT);
-        negify(TT,TT);
-        premult(BB,2,AA);
-        xgcd(AA,DG,AA,AA,AA);
-        mad(AA,TT,TT,DG,DG,AA);
-        multiply(AA,DG,TT);
-        add(BB,TT,BB);        /* BB^2 = DD mod DG^2 */
-        multiply(DG,DG,AA);   /* AA = DG*DG         */
-        xgcd(DG,DD,IG,IG,IG); /* IG = 1/DG mod DD  */
+        negify(TT,TT); /* 以上三行: TT=-(BB*BB-DD)/DG */
+        premult(BB,2,AA); /* AA=2*BB */
+        xgcd(AA,DG,AA,AA,AA); /* AA = 1/AA mod DG */
+        mad(AA,TT,TT,DG,DG,AA); /* AA = AA*TT mod DG */
+        multiply(AA,DG,TT); /* TT=AA*DG */
+        add(BB,TT,BB);         /** BB^2 = DD mod DG^2 */
+        multiply(DG,DG,AA);    /** AA = DG*DG         */
+        xgcd(DG,DD,IG,IG,IG);  /** IG = 1/DG mod DD  */
 
         r1[0]=r2[0]=0;
         for (k=1;k<=mm;k++) 
         { /* find roots of quadratic mod each prime */
-            s=subdiv(BB,epr[k],TT);
-            r=subdiv(AA,epr[k],TT);
-            r=invers(r,epr[k]);     /* r = 1/AA mod p */
+            s=subdiv(BB,epr[k],TT); /* s=BB mod epr[k] */
+            r=subdiv(AA,epr[k],TT); /* r=AA mod epr[k] */
+            r=invers(r,epr[k]);     /* 以上两行: r = 1/AA mod p */
             s1=(epr[k]-s+rp[k]);
-            s2=(epr[k]-s+epr[k]-rp[k]);
-            r1[k]=smul(s1,r,epr[k]);
-            r2[k]=smul(s2,r,epr[k]);
+            s2=(epr[k]-s+epr[k]-rp[k]); 
+            r1[k]=smul(s1,r,epr[k]); /* r1[k] = s1*r mod epr[k] */
+            r2[k]=smul(s2,r,epr[k]); /* r2[k] = s2*r mod epr[k] */
         }
 
         for (ptr=(-NS);ptr<NS;ptr++)

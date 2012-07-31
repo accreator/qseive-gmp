@@ -399,7 +399,7 @@ int main()
     M=50*(long)mm;
     NS=(int)(M/SSIZE);
     if (M%SSIZE!=0) NS++;
-    M=SSIZE*(long)NS; /* 以上四行做了一件事情:  M:=(50*mm+SSIZE-1)/SSIZE*SSIZE 即M为不小于50*mm的SSIZE的倍数中最小的 */
+    M=SSIZE*(long)NS; /* 以上四行:  M:=NS*SSIZE，其中NS=(50*mm+SSIZE-1)/SSIZE 即M为不小于50*mm的SSIZE的倍数中最小的 */
     logm=0;
     la=M;
     while ((la/=2)>0) logm++;   /* logm = log(M) */ /* 以2为底 */
@@ -456,20 +456,20 @@ int main()
         xgcd(AA,DG,AA,AA,AA); /* AA = 1/AA mod DG */
         mad(AA,TT,TT,DG,DG,AA); /* AA = AA*TT mod DG */
         multiply(AA,DG,TT); /* TT=AA*DG */
-        add(BB,TT,BB);         /* BB^2 = DD mod DG^2 */
-        multiply(DG,DG,AA);    /* AA = DG*DG         */
-        xgcd(DG,DD,IG,IG,IG);  /* IG = 1/DG mod DD  */
+        add(BB,TT,BB);         /** BB^2 = DD mod DG^2 */
+        multiply(DG,DG,AA);    /** AA = DG*DG         */
+        xgcd(DG,DD,IG,IG,IG);  /** IG = 1/DG mod DD  */
 
         r1[0]=r2[0]=0;
         for (k=1;k<=mm;k++) 
         { /* find roots of quadratic mod each prime */
-            s=subdiv(BB,epr[k],TT);
-            r=subdiv(AA,epr[k],TT);
-            r=invers(r,epr[k]);     /* r = 1/AA mod p */
+            s=subdiv(BB,epr[k],TT); /* s=BB mod epr[k] */
+            r=subdiv(AA,epr[k],TT); /* r=AA mod epr[k] */
+            r=invers(r,epr[k]);     /* 以上两行: r = 1/AA mod p */
             s1=(epr[k]-s+rp[k]);
-            s2=(epr[k]-s+epr[k]-rp[k]);
-            r1[k]=smul(s1,r,epr[k]);
-            r2[k]=smul(s2,r,epr[k]);
+            s2=(epr[k]-s+epr[k]-rp[k]); 
+            r1[k]=smul(s1,r,epr[k]); /* r1[k] = s1*r mod epr[k] */
+            r2[k]=smul(s2,r,epr[k]); /* r2[k] = s2*r mod epr[k] */
         }
 
         for (ptr=(-NS);ptr<NS;ptr++)
