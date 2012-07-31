@@ -27,7 +27,7 @@ int knuth(int mm,int *epr,big N,big D)
     double dp,fks,top;
     BOOL found;
     int i,j,bk,nk,kk,r,p;
-    static int K[]={0,1,2,3,5,6,7,10,11,13,14,15,17,0};
+    static int K[]={0,1,2,3,5,6,7,10,11,13,14,15,17,0}; //kk取遍K数组
     top=(-10.0e0);
     found=FALSE;
     nk=0;
@@ -38,7 +38,7 @@ int knuth(int mm,int *epr,big N,big D)
     { /* search for best Knuth-Schroepel multiplier */
         kk=K[++nk];
         if (kk==0)
-        { /* finished */
+        { /* finished */ // 把最大的估计值对应的部分再进行一次求素数而不是直接return
             kk=K[bk];
             found=TRUE;
         }
@@ -50,19 +50,19 @@ int knuth(int mm,int *epr,big N,big D)
         fks-=log((double)kk)/(2.0e0);
         i=0;
         j=1;
-        while (j<mm)
+        while (j<mm) // 求kk*N的前mm个质数，在这些质数下勒让德符号是0 or 1阿
         { /* select small primes */
             p=mip->PRIMES[++i];
             r=remain(D,p);
-            if (spmd(r,(p-1)/2,p)<=1)
+            if (spmd(r,(p-1)/2,p)<=1) //勒让德符号
             { /* use only if Jacobi symbol = 0 or 1 */
-                epr[++j]=p;
+                epr[++j]=p; 
                 dp=(double)p;
                 if (kk%p==0) fks+=log(dp)/dp;
                 else         fks+=2*log(dp)/(dp-1.0e0);
             }
         }
-        if (fks>top)
+        if (fks>top) 
         { /* find biggest fks */
             top=fks;
             bk=nk;
@@ -75,38 +75,38 @@ BOOL factored(long lptr,big T)
 { /* factor quadratic residue */
     BOOL facted;
     int i,j,r,st;  
-    partial=FALSE;
-    facted=FALSE;
+    partial=FALSE; // 被分成两部分
+    facted=FALSE; // 可以分解
     for (j=1;j<=mm;j++)
     { /* now attempt complete factorisation of T */
         r=(int)(lptr%epr[j]);
-        if (r<0) r+=epr[j];
+        if (r<0) r+=epr[j]; 		/*暂时上下文相关*/
         if (r!=r1[j] && r!=r2[j]) continue;
-        while (subdiv(T,epr[j],XX)==0)
+        while (subdiv(T,epr[j],XX)==0) // XX = T/epr[j]，尝试对 T 用 epr[j] 做质因数分解
         { /* cast out epr[j] */
-            e[j]++;
-            copy(XX,T);
+            e[j]++; //指数+1
+            copy(XX,T); //T = XX，继续做
         }
-        st=size(T);
-        if (st==1)
+        st=size(T);// 如果T fits in int那么 st 存的就是 T，否则是一个MAX
+        if (st==1) // 被当前的epr[j]分解成1了
         {
            facted=TRUE;
-           break;
+           break; // 直接返回true了
         }
-        if (size(XX)<=epr[j])
-        { /* st is prime < epr[mm]^2 */
+        if (size(XX)<=epr[j]) // XX 保存的是最后一次 T/epr[j] 的结果，尽管epr[j]可能不整除 T
+        { /* st is prime < epr[mm]^2 */ // 如果成功进了这一步，那么循环一定被break了
             if (st>=MR_TOOBIG || (st/epr[mm])>(1+mlf/50)) break;
             if (st<=epr[mm])
                 for (i=j;i<=mm;i++)
-                if (st==epr[i])
+                if (st==epr[i])		/* 这部分是想说当前剩下的数比 epr中最大的那个要小，那么就找找看后面的*/
                 {
                     e[i]++;
                     facted=TRUE;
                     break;
                 }
             if (facted) break;
-            lp=st;  /* factored with large prime */
-            partial=TRUE;
+            lp=st;  /* factored with large prime */ // lp是个全局变量
+            partial=TRUE; // 说明被部分分解了
             facted=TRUE;
             break;
         }
@@ -114,7 +114,7 @@ BOOL factored(long lptr,big T)
     return facted;
 }
 
-BOOL gotcha(void)
+BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
 { /* use new factorisation */
     int r,j,i,k,n,rb,had,hp;
     unsigned int t;
@@ -136,34 +136,20 @@ BOOL gotcha(void)
         }
         if (!found && nlp>=mlf) return FALSE;
     }
-    copy(PP,XX);
-    convert(1,YY);
+    copy(PP,XX);	// XX = PP
+    convert(1,YY);	// YY=1 
     for (k=1;k<=mm;k++)
     { /* build up square part in YY  *
        * reducing e[k] to 0s and 1s */
         if (e[k]<2) continue;
-        r=e[k]/2;
-        e[k]%=2;
-        expint(epr[k],r,TT);
-        multiply(TT,YY,YY);
+        r=e[k]/2;	// 开根号
+        e[k]%=2;	// 模2给异或方程组用
+        expint(epr[k],r,TT); 
+        multiply(TT,YY,YY); // YY = YY * epr[k]的r次方，把这一侧的数字乘出来
     }
-/* debug only 
-	printf("\nX= ");
-    cotnum(XX,stdout);
-	printf("Y= ");
-    cotnum(YY,stdout);
-    if (e[0]==1) printf("-1");
-    else printf("1");
-    for (k=1;k<=mm;k++)
-    {
-        if (e[k]==0) continue;
-        printf(".%d",epr[k]);
-    }
-    if (partial) printf(".%d\n",lp);
-    else printf("\n");
-*/
+
     if (partial)
-    { /* factored with large prime */
+    { /* factored with large prime */ // 在构造异或方程组吧
         if (!found)
         { /* store new partial factorization */
             hash[had]=nlp;
@@ -172,8 +158,8 @@ BOOL gotcha(void)
             copy(YY,w[nlp]);
             for (n=0,rb=0,j=0;j<=mm;j++)
             {
-                G[nlp][n]|=((e[j]&1)<<rb);
-                if (++rb==nbts) n++,rb=0;
+                G[nlp][n]|=((e[j]&1)<<rb); // 压位，为了速度
+                if (++rb==nbts) n++,rb=0;  // 压nbts=32位
             }
             nlp++;
         }
@@ -181,8 +167,8 @@ BOOL gotcha(void)
         { /* match found so use as factorization */
             printf("\b\b\b\b\b\b*");
             fflush(stdout);
-            mad(XX,z[hp],XX,NN,NN,XX);// XX' = (XX * z[hp] + XX) % NN , NN' = (XX * z[hp] + XX) / NN, 
-            mad(YY,w[hp],YY,NN,NN,YY);// YY' = (YY * w[hp] + YY) % NN , NN' = ()
+            mad(XX,z[hp],XX,NN,NN,XX);
+            mad(YY,w[hp],YY,NN,NN,YY);
             for (n=0,rb=0,j=0;j<=mm;j++)
             {
                 t=(G[hp][n]>>rb);
@@ -195,7 +181,7 @@ BOOL gotcha(void)
                 }
                 if (++rb==nbts) n++,rb=0;
             }
-            premult(YY,lp,YY);
+            premult(YY,lp,YY); 
             divide(YY,NN,NN);
         }
     }
@@ -245,16 +231,7 @@ BOOL gotcha(void)
             printf("%5d",jj);
         }
     }
-/*
-    for (i=0;i<mm;i++)
-    {
-        for (j=0;j<1+mm/(8*sizeof(int));j++)
-        {
-            printf("%x",EE[i][j]);
-        }
-        printf("\n");
-    }
-*/
+
     if (found)
     { /* check for false alarm */
         printf("\ntrying...\n");
