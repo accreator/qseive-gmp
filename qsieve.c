@@ -136,34 +136,20 @@ BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
         }
         if (!found && nlp>=mlf) return FALSE;
     }
-    copy(PP,XX);
-    convert(1,YY);
+    copy(PP,XX);	// XX = PP
+    convert(1,YY);	// YY=1 
     for (k=1;k<=mm;k++)
     { /* build up square part in YY  *
        * reducing e[k] to 0s and 1s */
         if (e[k]<2) continue;
-        r=e[k]/2;
-        e[k]%=2;
-        expint(epr[k],r,TT);
-        multiply(TT,YY,YY);
+        r=e[k]/2;	// 开根号
+        e[k]%=2;	// 模2给异或方程组用
+        expint(epr[k],r,TT); 
+        multiply(TT,YY,YY); // YY = YY * epr[k]的r次方，把这一侧的数字乘出来
     }
-/* debug only 
-	printf("\nX= ");
-    cotnum(XX,stdout);
-	printf("Y= ");
-    cotnum(YY,stdout);
-    if (e[0]==1) printf("-1");
-    else printf("1");
-    for (k=1;k<=mm;k++)
-    {
-        if (e[k]==0) continue;
-        printf(".%d",epr[k]);
-    }
-    if (partial) printf(".%d\n",lp);
-    else printf("\n");
-*/
+
     if (partial)
-    { /* factored with large prime */
+    { /* factored with large prime */ // 在构造异或方程组吧
         if (!found)
         { /* store new partial factorization */
             hash[had]=nlp;
@@ -172,8 +158,8 @@ BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
             copy(YY,w[nlp]);
             for (n=0,rb=0,j=0;j<=mm;j++)
             {
-                G[nlp][n]|=((e[j]&1)<<rb);
-                if (++rb==nbts) n++,rb=0;
+                G[nlp][n]|=((e[j]&1)<<rb); // 压位，为了速度
+                if (++rb==nbts) n++,rb=0;  // 压nbts=32位
             }
             nlp++;
         }
@@ -181,8 +167,8 @@ BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
         { /* match found so use as factorization */
             printf("\b\b\b\b\b\b*");
             fflush(stdout);
-            mad(XX,z[hp],XX,NN,NN,XX);// XX' = (XX * z[hp] + XX) % NN , NN' = (XX * z[hp] + XX) / NN, 
-            mad(YY,w[hp],YY,NN,NN,YY);// YY' = (YY * w[hp] + YY) % NN , NN' = ()
+            mad(XX,z[hp],XX,NN,NN,XX);
+            mad(YY,w[hp],YY,NN,NN,YY);
             for (n=0,rb=0,j=0;j<=mm;j++)
             {
                 t=(G[hp][n]>>rb);
@@ -195,7 +181,7 @@ BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
                 }
                 if (++rb==nbts) n++,rb=0;
             }
-            premult(YY,lp,YY);
+            premult(YY,lp,YY); 
             divide(YY,NN,NN);
         }
     }
@@ -245,16 +231,7 @@ BOOL gotcha(void) // 进这个过程，前提一定是factored返回true了
             printf("%5d",jj);
         }
     }
-/*
-    for (i=0;i<mm;i++)
-    {
-        for (j=0;j<1+mm/(8*sizeof(int));j++)
-        {
-            printf("%x",EE[i][j]);
-        }
-        printf("\n");
-    }
-*/
+
     if (found)
     { /* check for false alarm */
         printf("\ntrying...\n");
