@@ -28,7 +28,7 @@ int knuth(int mm,int *epr,big N,big D)
     BOOL found;
     int i,j,bk,nk,kk,r,p;
     static int K[]={0,1,2,3,5,6,7,10,11,13,14,15,17,0};
-    top=(-10.0e0); // top = -10
+    top=(-10.0e0);
     found=FALSE;
     nk=0;
     bk=0;
@@ -181,8 +181,8 @@ BOOL gotcha(void)
         { /* match found so use as factorization */
             printf("\b\b\b\b\b\b*");
             fflush(stdout);
-            mad(XX,z[hp],XX,NN,NN,XX);
-            mad(YY,w[hp],YY,NN,NN,YY);
+            mad(XX,z[hp],XX,NN,NN,XX);// XX' = (XX * z[hp] + XX) % NN , NN' = (XX * z[hp] + XX) / NN, 
+            mad(YY,w[hp],YY,NN,NN,YY);// YY' = (YY * w[hp] + YY) % NN , NN' = ()
             for (n=0,rb=0,j=0;j<=mm;j++)
             {
                 t=(G[hp][n]>>rb);
@@ -383,9 +383,9 @@ int main()
     int k,S,r,s1,s2,s,NS,logm,ptr,threshold,epri;
     long M,la,lptr;
 #ifndef MR_FULLWIDTH
-    mip=mirsys(-36,0); /* ? */
+    mip=mirsys(-36,0);
 #else
-    mip=mirsys(-36,MAXBASE); /* ? */
+    mip=mirsys(-36,MAXBASE);
 #endif
     if (initv()<0) return 0;
 
