@@ -447,18 +447,18 @@ int main()
         } while (size(TT)!=1); /* 如果DD是二次剩余，则停止 */
         mip->NTRY=r; /* 恢复默认的素数测试次数 */
         incr(DG,1,TT);
-        subdiv(TT,4,TT); /* 以上两行: TT=(DG+1)/4 */
-        powmod(DD,TT,DG,BB);
-        negify(DD,TT);
+        subdiv(TT,4,TT);
+        powmod(DD,TT,DG,BB); /* 以上三行: BB=DD^((DG+1)/4) mod DG */
+        negify(DD,TT); 
         mad(BB,BB,TT,DG,TT,TT);
-        negify(TT,TT);
-        premult(BB,2,AA);
-        xgcd(AA,DG,AA,AA,AA);
-        mad(AA,TT,TT,DG,DG,AA);
-        multiply(AA,DG,TT);
-        add(BB,TT,BB);        /* BB^2 = DD mod DG^2 */
-        multiply(DG,DG,AA);   /* AA = DG*DG         */
-        xgcd(DG,DD,IG,IG,IG); /* IG = 1/DG mod DD  */
+        negify(TT,TT); /* 以上三行: TT=-(BB*BB-DD)/DG */
+        premult(BB,2,AA); /* AA=2*BB */
+        xgcd(AA,DG,AA,AA,AA); /* AA = 1/AA mod DG */
+        mad(AA,TT,TT,DG,DG,AA); /* AA = AA*TT mod DG */
+        multiply(AA,DG,TT); /* TT=AA*DG */
+        add(BB,TT,BB);         /* BB^2 = DD mod DG^2 */
+        multiply(DG,DG,AA);    /* AA = DG*DG         */
+        xgcd(DG,DD,IG,IG,IG);  /* IG = 1/DG mod DD  */
 
         r1[0]=r2[0]=0;
         for (k=1;k<=mm;k++) 
