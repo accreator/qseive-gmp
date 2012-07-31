@@ -465,7 +465,8 @@ int main()
                 if (s2<0) s2+=epri;
 
             /* these loops are time-critical */
-   
+  			/* 这部分是筛法的主要部分，数组下标表示多项式Q(x)的参数x */ 
+			/* s1与s2是两个Q(x)=0 (mod p)的解 */
                 for (j=s1;j<SSIZE;j+=epri) sieve[j]+=logpi;
                 if (s1==s2) continue;
                 for (j=s2;j<SSIZE;j+=epri) sieve[j]+=logpi;
