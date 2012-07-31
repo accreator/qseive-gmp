@@ -420,6 +420,7 @@ int main()
 
     jj=0;
     nlp=0;
+
     premult(DD,2,DG); 
     nroot(DG,2,DG); /* 以上两行: DG=sqrt(DD*2) */
     
@@ -428,24 +429,25 @@ int main()
     nroot(DG,2,DG); /* 以上三行: DG=sqrt(DG/M) */
     if (subdiv(DG,2,TT)==0) incr(DG,1,DG); /* DG若可整除2，则自增1 */
     if (subdiv(DG,4,TT)==1) incr(DG,2,DG); /* DG若模4余1，则自增2 */ /* 实际上这两行是令DG等于不小余DG的数中模4余3的最小的数 */
+
     printf("working...     0");
 
     forever
     { /* try a new polynomial */
         r=mip->NTRY; 
-        mip->NTRY=1;         /* speed up search for prime */
+        mip->NTRY=1;         /* speed up search for prime */ /* 将素数测试次数改为1，以提高速度 */
         do
         { /* looking for suitable prime DG = 3 mod 4 */
             do {
                incr(DG,4,DG);
             } while(!isprime(DG));
             decr(DG,1,TT);
-            subdiv(TT,2,TT);
-            powmod(DD,TT,DG,TT);  /* check D is quad residue */
-        } while (size(TT)!=1);
-        mip->NTRY=r;
+            subdiv(TT,2,TT); /* 以上两行: TT=(DG-1)/2 其中DG是素数 */
+            powmod(DD,TT,DG,TT);  /* check D is quad residue */ /* TT=DD^TT mod DG */
+        } while (size(TT)!=1); /* 如果DD是二次剩余，则停止 */
+        mip->NTRY=r; /* 恢复默认的素数测试次数 */
         incr(DG,1,TT);
-        subdiv(TT,4,TT);
+        subdiv(TT,4,TT); /* 以上两行: TT=(DG+1)/4 */
         powmod(DD,TT,DG,BB);
         negify(DD,TT);
         mad(BB,BB,TT,DG,TT,TT);
