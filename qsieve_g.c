@@ -8,9 +8,12 @@
 #include <gmp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h> 
 
 #define SSIZE 100000    /* Maximum sieve size            */
+
+#define PSIZE 200000
 
 #define forever while(1)
 #define TRUE 1
@@ -44,6 +47,7 @@ void convert(int n, big x);
 void expint(int a, int n, big x);
 void mad(big x, big y, big z, big w, big q, big r);
 int cotnum(big x, FILE *fout);
+int cinnum(big x, FILE *fin);
 void divide(big x, big y, big z);
 void add(big x, big y, big z);
 int egcd(big x, big y, big z);
@@ -62,6 +66,14 @@ BOOL nroot(big x, int n, big w);
 void negify(big x, big y);
 int logb2(big x);
 void powmod(big x, big y, big n, big w);
+
+miracl *mirsys(int nd, int nb)
+{
+    miracl *t;
+    t = (miracl *)malloc(sizeof(miracl));
+    t -> NTRY = 10;
+    return t;
+}
 
 void premult(big x, int n, big z)
 {
@@ -131,7 +143,12 @@ void mad(big x, big y, big z, big w, big q, big r)
 
 int cotnum(big x, FILE *fout)
 {
-    ;
+    return mpz_out_str(fout, 10, x);
+}
+
+int cinnum(big x, FILE *fin)
+{
+    return mpz_inp_str(x, fin, 10);
 }
 
 void divide(big x, big y, big z)
@@ -152,7 +169,7 @@ int egcd(big x, big y, big z)
 
 BOOL isprime(big x)
 {
-    mpz_probab_prime_p(x, mip->NTRY);
+    return mpz_probab_prime_p(x, mip->NTRY);
 }
 
 void subtract(big x, big y, big z)
@@ -203,7 +220,36 @@ int sqrmp(int x, int m)
 
 void gprime(int maxp)
 {
-    ;
+    char *vis;
+    int i, j, k = 0;
+    vis = (char *)malloc(PSIZE);
+    memset(vis, 0, PSIZE);
+    for(i=2; i<PSIZE; i++)
+    {
+        if(vis[i] == 0)
+        {
+            k ++;
+            if(i<40000)
+                for(j=i*i; j<PSIZE; j+=i) vis[j] = 1;
+        }
+    }
+    mip->PRIMES = (int *)malloc(k*sizeof(int));
+    k = 0;
+    for(i=2; i<PSIZE; i++)
+    {
+        if(vis[i] == 0)
+        {
+            mip->PRIMES[k] = i;
+            k ++;
+        }
+    }
+    free(vis);
+    if(mip->PRIMES[k-1] < maxp)
+    {
+        printf("ERROR\n");
+        fflush(stdout);
+        exit(0);
+    }
 }
 
 void incr(big x, int n, big z)
@@ -236,6 +282,27 @@ void powmod(big x, big y, big n, big w)
     mpz_powm_sec(w, x, y, n);
 }
 
+void* mr_alloc(int len, int size)
+{
+    return malloc(len * size);
+}
+
+void power(big x, long n, big z, big w)
+{
+    convert(n, IIA);
+    powmod(x, IIA, z, w);
+}
+
+int xgcd(big x, big y, big xd, big yd, big z)
+{
+    mpz_gcdext(z, xd, yd, x, y);
+    return size(z);
+}
+
+int smul(int x, int y, int n)
+{
+    return (int)((((long long)x)*((long long)y)) % ((long long)n));
+}
 
 int knuth(int mm,int *epr,big N,big D)
 { /* Input number to be factored N and find best multiplier k  *
@@ -363,6 +430,7 @@ BOOL gotcha(void)
         expint(epr[k],r,TT);
         multiply(TT,YY,YY);
     }
+    printf("Y"); fflush(stdout);
 /* debug only 
 	printf("\nX= ");
     cotnum(XX,stdout);
@@ -471,6 +539,8 @@ BOOL gotcha(void)
         printf("\n");
     }
 */
+    printf("X"); fflush(stdout);
+
     if (found)
     { /* check for false alarm */
         printf("\ntrying...\n");
@@ -486,18 +556,21 @@ int initv(void)
     int i,j,d,pak,k,maxp;
     double dp;
 
-    NN=mirvar(0); 
-    TT=mirvar(0);
-    DD=mirvar(0);
-    RR=mirvar(0);
-    VV=mirvar(0);
-    PP=mirvar(0);
-    XX=mirvar(0);
-    YY=mirvar(0);
-    DG=mirvar(0);
-    IG=mirvar(0);
-    AA=mirvar(0);
-    BB=mirvar(0);
+    mpz_init(NN);//NN=mirvar(0); 
+    mpz_init(TT);//TT=mirvar(0);
+    mpz_init(DD);//DD=mirvar(0);
+    mpz_init(RR);//RR=mirvar(0);
+    mpz_init(VV);//VV=mirvar(0);
+    mpz_init(PP);//PP=mirvar(0);
+    mpz_init(XX);//XX=mirvar(0);
+    mpz_init(YY);//YY=mirvar(0);
+    mpz_init(DG);//DG=mirvar(0);
+    mpz_init(IG);//IG=mirvar(0);
+    mpz_init(AA);//AA=mirvar(0);
+    mpz_init(BB);//BB=mirvar(0);
+    mpz_init(IIA);
+    mpz_init(IIB);
+    mpz_init(IIC);
 
     nbts=8*sizeof(int);
 
@@ -568,13 +641,13 @@ int initv(void)
 
     for (i=0;i<=mm;i++)
     {
-        x[i]=mirvar(0);
-        y[i]=mirvar(0);
+        mpz_init(x[i]); //x[i]=mirvar(0);
+        mpz_init(y[i]); //y[i]=mirvar(0);
     }
     for (i=0;i<=mlf;i++)
     {
-        z[i]=mirvar(0);
-        w[i]=mirvar(0);
+        mpz_init(z[i]); //z[i]=mirvar(0);
+        mpz_init(w[i]); //w[i]=mirvar(0);
     }
 
     EE=(unsigned int **)mr_alloc(mm+1,sizeof(unsigned int *));
@@ -603,15 +676,14 @@ int main()
 #else
     mip=mirsys(-36,MAXBASE);
 #endif
-    if (initv()<0) return 0;
-
+    if (initv()<0) return 0;  
+    
     hmod=2*mlf+1;               /* set up hash table */
     convert(hmod,TT);
     while (!isprime(TT)) decr(TT,2,TT);
     hmod=size(TT);
     hmod2=hmod-2;
     for (k=0;k<hmod;k++) hash[k]=(-1);
-
     M=50*(long)mm;
     NS=(int)(M/SSIZE);
     if (M%SSIZE!=0) NS++;
@@ -648,6 +720,7 @@ int main()
 
     forever
     { /* try a new polynomial */
+        fflush(stdout);
         r=mip->NTRY;
         mip->NTRY=1;         /* speed up search for prime */
         do
@@ -685,9 +758,10 @@ int main()
             r1[k]=smul(s1,r,epr[k]);
             r2[k]=smul(s2,r,epr[k]);
         }
-
+        //printf("A"); fflush(stdout);
         for (ptr=(-NS);ptr<NS;ptr++)
         { /* sieve over next period */
+            //printf("D"); fflush(stdout);
             la=(long)ptr*SSIZE;
             SV=(unsigned int *)sieve;
             for (i=0;i<SSIZE/sizeof(int);i++) *SV++=0;
@@ -707,10 +781,13 @@ int main()
                 if (s1==s2) continue;
                 for (j=s2;j<SSIZE;j+=epri) sieve[j]+=logpi;
             }
-
+            //printf("D");fflush(stdout);
             for (a=0;a<SSIZE;a++)
             { /* main loop - look for fully factored residues */
+                //printf("D"); fflush(stdout);
+                //printf("%d %d\n", sieve[a], threshold); fflush(stdout);
                 if (sieve[a]<threshold) continue;
+                //printf("E"); fflush(stdout);
                 lptr=la+a;
                 lgconv(lptr,TT);
                 S=0;
@@ -725,7 +802,9 @@ int main()
                 copy(VV,TT);
                 e[0]=S;
                 for (k=1;k<=mm;k++) e[k]=0;
+                //printf("C"); fflush(stdout);
                 if (!factored(lptr,TT)) continue;
+                //printf("B"); fflush(stdout);
                 if (gotcha())
                 { /* factors found! */
                     egcd(TT,NN,PP);
