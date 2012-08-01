@@ -71,7 +71,7 @@ miracl *mirsys(int nd, int nb)
 {
     miracl *t;
     t = (miracl *)malloc(sizeof(miracl));
-    t -> NTRY = 10;
+    t -> NTRY = 20;
     return t;
 }
 
@@ -105,8 +105,7 @@ int spmd(int x, int n, int m)
 
 void copy(big x, big y)
 {
-    //mpz_set(IIA, x);
-    //mpz_set(y, IIA);
+    if(x==y) return;
     mpz_set(y, x);
 }
 
@@ -132,20 +131,24 @@ void mad(big x, big y, big z, big w, big q, big r)
 {
     multiply(x, y, IIA);
     if(x != z && y != z) add(IIA, z, IIA);
-        
-    if(w != q)
-    {
-        divide(IIA, w, q);
-    }
+    
     if(q != r)
     {
         mpz_tdiv_r(r, IIA, w);
     }
+    if(w != q)
+    {
+        divide(IIA, w, q);
+    }
+    
 }
 
 int cotnum(big x, FILE *fout)
 {
-    return mpz_out_str(fout, 10, x);
+    int t;
+    t = mpz_out_str(fout, 10, x);
+    puts(""); fflush(stdout);
+    return t;
 }
 
 int cinnum(big x, FILE *fin)
@@ -155,7 +158,10 @@ int cinnum(big x, FILE *fin)
 
 void divide(big x, big y, big z)
 {
-    mpz_tdiv_q(z, x, y);
+    if(x != z) mpz_tdiv_r(IIC, x, y);
+    if(y != z) mpz_tdiv_q(IIB, x, y);
+    if(x != z) copy(IIC, x);
+    if(y != z) copy(IIB, z);
 }
 
 void add(big x, big y, big z)
@@ -171,7 +177,9 @@ int egcd(big x, big y, big z)
 
 BOOL isprime(big x)
 {
-    return mpz_probab_prime_p(x, mip->NTRY);
+    if(mpz_probab_prime_p(x, mip->NTRY)) return TRUE;
+    return FALSE;
+    //return mpz_probab_prime_p(x, 20);
 }
 
 void subtract(big x, big y, big z)
@@ -205,6 +213,7 @@ void lgconv(long n, big x)
 
 int invers(int x, int y)
 {
+    if(x == 0) return y;
     convert(x, IIA);
     convert(y, IIB);
     mpz_invert(IIC, IIA, IIB);
@@ -232,6 +241,9 @@ void gprime(int maxp)
 {
     char *vis;
     int i, j, k = 0;
+    static flag = 0;
+    if(flag) return;
+    flag = 1;
     vis = (char *)malloc(PSIZE);
     memset(vis, 0, PSIZE);
     for(i=2; i<PSIZE; i++)
@@ -274,7 +286,7 @@ void decr(big x, int n, big z)
 
 BOOL nroot(big x, int n, big w)
 {
-    mpz_root(w, x, n);
+    return mpz_root(w, x, n);
 }
 
 void negify(big x, big y)
@@ -294,7 +306,18 @@ void powmod(big x, big y, big n, big w)
 
 void* mr_alloc(int len, int size)
 {
-    return malloc(len * size);
+    void *p;
+    p = malloc(len * size);
+    /*
+    if(p == NULL)
+    {
+        printf("ORZ!!!\n");
+        fflush(stdout);
+        while(1);
+    }
+    */
+    memset(p, 0, len*size);
+    return p;
 }
 
 void power(big x, long n, big z, big w)
@@ -319,7 +342,6 @@ int xgcd(big x, big y, big xd, big yd, big z)
     }
     else
     {
-        //add(IIA, IIB, IIA);
         copy(IIA, xd);
     }
     //mpz_gcdext(z, xd, yd, x, y);
@@ -456,7 +478,7 @@ BOOL gotcha(void)
         expint(epr[k],r,TT);
         multiply(TT,YY,YY);
     }
-/* debug only 
+/* debug only
 	printf("\nX= ");
     cotnum(XX,stdout);
 	printf("Y= ");
@@ -469,8 +491,8 @@ BOOL gotcha(void)
         printf(".%d",epr[k]);
     }
     if (partial) printf(".%d\n",lp);
-    else printf("\n");
-*/
+    else printf("\n"); */
+    //printf("A");
     if (partial)
     { /* factored with large prime */
         if (!found)
@@ -492,6 +514,9 @@ BOOL gotcha(void)
             fflush(stdout);
             mad(XX,z[hp],XX,NN,NN,XX);
             mad(YY,w[hp],YY,NN,NN,YY);
+            //cotnum(XX);
+            //cotnum(YY);
+            //cotnum(NN);
             for (n=0,rb=0,j=0;j<=mm;j++)
             {
                 t=(G[hp][n]>>rb);
@@ -526,6 +551,7 @@ BOOL gotcha(void)
             i=b[k];
             mad(XX,x[i],XX,NN,NN,XX);    /* This is very inefficient -  */
             mad(YY,y[i],YY,NN,NN,YY);    /* There must be a better way! */
+            //cotnum(NN, stdout); cotnum(XX, stdout); cotnum(YY, stdout);
             for (n=0,rb=0,j=0;j<=mm;j++)
             { /* Gaussian elimination */
                 t=(EE[i][n]>>rb);
@@ -539,6 +565,8 @@ BOOL gotcha(void)
             convert(epr[j],TT);
             power(TT,e[j]/2,NN,TT);
             mad(YY,TT,YY,NN,NN,YY);
+            //printf("\nx-> ");
+            //cotnum(NN, stdout); cotnum(XX, stdout); cotnum(YY, stdout);
         }
         if (!found)
         { /* store details in E, x and y for later */
@@ -576,21 +604,24 @@ BOOL gotcha(void)
 
 int initv(void)
 { /* initialize big numbers and arrays */
-    int i,j,d,pak,k,maxp;
+    int i,d,pak,k,maxp;
     double dp;
 
-    NN=mirvar(0); 
-    TT=mirvar(0);
-    DD=mirvar(0);
-    RR=mirvar(0);
-    VV=mirvar(0);
-    PP=mirvar(0);
-    XX=mirvar(0);
-    YY=mirvar(0);
-    DG=mirvar(0);
-    IG=mirvar(0);
-    AA=mirvar(0);
-    BB=mirvar(0);
+    mpz_init(NN); //NN=mirvar(0); 
+    mpz_init(TT); //TT=mirvar(0);
+    mpz_init(DD); //DD=mirvar(0);
+    mpz_init(RR); //RR=mirvar(0);
+    mpz_init(VV); //VV=mirvar(0);
+    mpz_init(PP); //PP=mirvar(0);
+    mpz_init(XX); //XX=mirvar(0);
+    mpz_init(YY); //YY=mirvar(0);
+    mpz_init(DG); //DG=mirvar(0);
+    mpz_init(IG); //IG=mirvar(0);
+    mpz_init(AA); //AA=mirvar(0);
+    mpz_init(BB); //BB=mirvar(0);
+    mpz_init(IIA);
+    mpz_init(IIB);
+    mpz_init(IIC);
 
     nbts=8*sizeof(int);
 
@@ -638,7 +669,6 @@ int initv(void)
     gprime(0);   /* reclaim PRIMES space */
 
     mlf=2*mm;
-
 /* now get space for arrays */
 
     r1=(int *)mr_alloc((mm+1),sizeof(int));
@@ -654,19 +684,25 @@ int initv(void)
 
     sieve=(unsigned char *)mr_alloc(SSIZE+1,1); 
 
-    x=(big *)mr_alloc(mm+1,sizeof(big *));
-    y=(big *)mr_alloc(mm+1,sizeof(big *));
-    z=(big *)mr_alloc(mlf+1,sizeof(big *));
-    w=(big *)mr_alloc(mlf+1,sizeof(big *));
+    x=(big *)mr_alloc(mm+1,sizeof(big));
+    y=(big *)mr_alloc(mm+1,sizeof(big));
+    z=(big *)mr_alloc(mlf+1,sizeof(big));
+    w=(big *)mr_alloc(mlf+1,sizeof(big));
 
     for (i=0;i<=mm;i++)
     {
         mpz_init(x[i]);//x[i]=mirvar(0);
+    }
+    for (i=0;i<=mm;i++)
+    {
         mpz_init(y[i]);//y[i]=mirvar(0);
     }
     for (i=0;i<=mlf;i++)
     {
         mpz_init(z[i]);//z[i]=mirvar(0);
+    }
+    for (i=0;i<=mlf;i++)
+    {
         mpz_init(w[i]);//w[i]=mirvar(0);
     }
 
@@ -716,20 +752,12 @@ int main()
     for (k=1;k<=mm;k++)
     { /* find root mod each prime, and approx log of each prime */
         r=subdiv(DD,epr[k],TT);
-        printf("(%d %d)", r, epr[k]);
         rp[k]=sqrmp(r,epr[k]);
         logp[k]=0;
         r=epr[k];
         while((r/=2)>0) logp[k]++;
     }
-    /*
-    for(k=1; k<=mm; k++)
-    {
-        printf("%d ", rp[k]);
-    }
-    printf("  ***\n");
-    fflush(stdout);
-    */
+
     r=subdiv(DD,8,TT);    /* take special care of 2 */
     if (r==5) logp[1]++;
     if (r==1) logp[1]+=2;
@@ -765,63 +793,40 @@ int main()
         incr(DG,1,TT);
         subdiv(TT,4,TT);
         powmod(DD,TT,DG,BB);
-        //cotnum(BB, stdout); fflush(stdout);
         negify(DD,TT);
         mad(BB,BB,TT,DG,TT,TT);
         negify(TT,TT);
         
         premult(BB,2,AA);
-        cotnum(AA, stdout); printf("\n"); fflush(stdout);
-        cotnum(DG, stdout); printf("\n"); fflush(stdout);
         xgcd(AA,DG,AA,AA,AA);
-        cotnum(AA, stdout); printf("\n"); fflush(stdout);
         mad(AA,TT,TT,DG,DG,AA);
-        cotnum(AA, stdout); printf("\n"); fflush(stdout);
-        //cotnum(TT, stdout); printf("\n"); fflush(stdout);
         multiply(AA,DG,TT);
-        //cotnum(AA, stdout); printf("\n"); fflush(stdout);
-        //cotnum(DG, stdout); printf("\n"); fflush(stdout);
-        //cotnum(TT, stdout); printf("\n"); fflush(stdout);
         add(BB,TT,BB);        /* BB^2 = DD mod DG^2 */
         multiply(DG,DG,AA);   /* AA = DG*DG         */
         xgcd(DG,DD,IG,IG,IG); /* IG = 1/DG mod DD  */
-        cotnum(AA, stdout); fflush(stdout);
-        cotnum(BB, stdout); fflush(stdout);
-        //cotnum(DG, stdout); fflush(stdout);
-        //cotnum(DD, stdout); fflush(stdout);
-        cotnum(TT, stdout); fflush(stdout);
-        cotnum(IG, stdout); fflush(stdout);
+        
+        //cotnum(DG, stdout);
+        //scanf("%*c");
         
         r1[0]=r2[0]=0;
         for (k=1;k<=mm;k++) 
         { /* find roots of quadratic mod each prime */
             s=subdiv(BB,epr[k],TT);
             r=subdiv(AA,epr[k],TT);
-            printf("(%d ", r);
             r=invers(r,epr[k]);     /* r = 1/AA mod p */
-            
-            printf("%d %d %d) ", s, r, epr[k]); fflush(stdout);
-            
+           
             s1=(epr[k]-s+rp[k]);
             s2=(epr[k]-s+epr[k]-rp[k]);
-            printf("[%d %d] ", s1, s2);
+            if(s1 > s2)
+            {
+                int t = s1;
+                s1 = s2;
+                s2 = t;
+            }
             r1[k]=smul(s1,r,epr[k]);
             r2[k]=smul(s2,r,epr[k]);
         }
-
-        for(k=1; k<=mm; k++)
-        {
-            printf("%d ", r1[k]);
-            fflush(stdout);
-        }
-        puts("");
-        for(k=1; k<=mm; k++)
-        {
-            printf("%d ", r2[k]);
-            fflush(stdout);
-        }
-        puts("");
-        if(r2[mm] != 8 && r2[mm] != 0) while(1);
+        //if(r2[mm] != 8 && r2[mm] != 0) while(1);
         
         for (ptr=(-NS);ptr<NS;ptr++)
         { /* sieve over next period */
