@@ -105,6 +105,8 @@ int spmd(int x, int n, int m)
 
 void copy(big x, big y)
 {
+    //mpz_set(IIA, x);
+    //mpz_set(y, IIA);
     mpz_set(y, x);
 }
 
@@ -211,11 +213,19 @@ int invers(int x, int y)
 
 int sqrmp(int x, int m)
 {
+    /*
     convert(x, IIA);
     convert(m, IIB);
     mpz_sqrt(IIA, IIA);
     mpz_tdiv_r(IIC, IIA, IIB);
     return size(IIC);
+    */
+    long long i;
+    for(i=0; i<m; i++)
+    {
+        if(i*i%m == x) return (int) i;
+    }
+    return 0;
 }
 
 void gprime(int maxp)
@@ -295,15 +305,31 @@ void power(big x, long n, big z, big w)
 
 int xgcd(big x, big y, big xd, big yd, big z)
 {
-    mpz_gcdext(z, xd, yd, x, y);
-    return size(z);
+    mpz_gcdext(IIC, IIA, IIB,  x, y);
+    while(size(IIA) < 0)
+    {
+        add(IIA, y, IIA);
+        subtract(IIB, x, IIB);
+    }
+    if(z != xd && z != yd) copy(IIC, z);
+    if(xd != yd)
+    {
+        copy(IIA, xd);
+        copy(IIB, yd);
+    }
+    else
+    {
+        //add(IIA, IIB, IIA);
+        copy(IIA, xd);
+    }
+    //mpz_gcdext(z, xd, yd, x, y);
+    return size(IIC);
 }
 
 int smul(int x, int y, int n)
 {
     return (int)((((long long)x)*((long long)y)) % ((long long)n));
 }
-
 int knuth(int mm,int *epr,big N,big D)
 { /* Input number to be factored N and find best multiplier k  *
    * for use over a factor base epr[] of size mm.  Set D=k.N.  */
@@ -430,7 +456,6 @@ BOOL gotcha(void)
         expint(epr[k],r,TT);
         multiply(TT,YY,YY);
     }
-    printf("Y"); fflush(stdout);
 /* debug only 
 	printf("\nX= ");
     cotnum(XX,stdout);
@@ -539,8 +564,6 @@ BOOL gotcha(void)
         printf("\n");
     }
 */
-    printf("X"); fflush(stdout);
-
     if (found)
     { /* check for false alarm */
         printf("\ntrying...\n");
@@ -556,21 +579,18 @@ int initv(void)
     int i,j,d,pak,k,maxp;
     double dp;
 
-    mpz_init(NN);//NN=mirvar(0); 
-    mpz_init(TT);//TT=mirvar(0);
-    mpz_init(DD);//DD=mirvar(0);
-    mpz_init(RR);//RR=mirvar(0);
-    mpz_init(VV);//VV=mirvar(0);
-    mpz_init(PP);//PP=mirvar(0);
-    mpz_init(XX);//XX=mirvar(0);
-    mpz_init(YY);//YY=mirvar(0);
-    mpz_init(DG);//DG=mirvar(0);
-    mpz_init(IG);//IG=mirvar(0);
-    mpz_init(AA);//AA=mirvar(0);
-    mpz_init(BB);//BB=mirvar(0);
-    mpz_init(IIA);
-    mpz_init(IIB);
-    mpz_init(IIC);
+    NN=mirvar(0); 
+    TT=mirvar(0);
+    DD=mirvar(0);
+    RR=mirvar(0);
+    VV=mirvar(0);
+    PP=mirvar(0);
+    XX=mirvar(0);
+    YY=mirvar(0);
+    DG=mirvar(0);
+    IG=mirvar(0);
+    AA=mirvar(0);
+    BB=mirvar(0);
 
     nbts=8*sizeof(int);
 
@@ -641,13 +661,13 @@ int initv(void)
 
     for (i=0;i<=mm;i++)
     {
-        mpz_init(x[i]); //x[i]=mirvar(0);
-        mpz_init(y[i]); //y[i]=mirvar(0);
+        mpz_init(x[i]);//x[i]=mirvar(0);
+        mpz_init(y[i]);//y[i]=mirvar(0);
     }
     for (i=0;i<=mlf;i++)
     {
-        mpz_init(z[i]); //z[i]=mirvar(0);
-        mpz_init(w[i]); //w[i]=mirvar(0);
+        mpz_init(z[i]);//z[i]=mirvar(0);
+        mpz_init(w[i]);//w[i]=mirvar(0);
     }
 
     EE=(unsigned int **)mr_alloc(mm+1,sizeof(unsigned int *));
@@ -676,14 +696,15 @@ int main()
 #else
     mip=mirsys(-36,MAXBASE);
 #endif
-    if (initv()<0) return 0;  
-    
+    if (initv()<0) return 0;
+
     hmod=2*mlf+1;               /* set up hash table */
     convert(hmod,TT);
     while (!isprime(TT)) decr(TT,2,TT);
     hmod=size(TT);
     hmod2=hmod-2;
     for (k=0;k<hmod;k++) hash[k]=(-1);
+
     M=50*(long)mm;
     NS=(int)(M/SSIZE);
     if (M%SSIZE!=0) NS++;
@@ -695,11 +716,20 @@ int main()
     for (k=1;k<=mm;k++)
     { /* find root mod each prime, and approx log of each prime */
         r=subdiv(DD,epr[k],TT);
+        printf("(%d %d)", r, epr[k]);
         rp[k]=sqrmp(r,epr[k]);
         logp[k]=0;
         r=epr[k];
         while((r/=2)>0) logp[k]++;
     }
+    /*
+    for(k=1; k<=mm; k++)
+    {
+        printf("%d ", rp[k]);
+    }
+    printf("  ***\n");
+    fflush(stdout);
+    */
     r=subdiv(DD,8,TT);    /* take special care of 2 */
     if (r==5) logp[1]++;
     if (r==1) logp[1]+=2;
@@ -720,7 +750,6 @@ int main()
 
     forever
     { /* try a new polynomial */
-        fflush(stdout);
         r=mip->NTRY;
         mip->NTRY=1;         /* speed up search for prime */
         do
@@ -736,32 +765,66 @@ int main()
         incr(DG,1,TT);
         subdiv(TT,4,TT);
         powmod(DD,TT,DG,BB);
+        //cotnum(BB, stdout); fflush(stdout);
         negify(DD,TT);
         mad(BB,BB,TT,DG,TT,TT);
         negify(TT,TT);
+        
         premult(BB,2,AA);
+        cotnum(AA, stdout); printf("\n"); fflush(stdout);
+        cotnum(DG, stdout); printf("\n"); fflush(stdout);
         xgcd(AA,DG,AA,AA,AA);
+        cotnum(AA, stdout); printf("\n"); fflush(stdout);
         mad(AA,TT,TT,DG,DG,AA);
+        cotnum(AA, stdout); printf("\n"); fflush(stdout);
+        //cotnum(TT, stdout); printf("\n"); fflush(stdout);
         multiply(AA,DG,TT);
+        //cotnum(AA, stdout); printf("\n"); fflush(stdout);
+        //cotnum(DG, stdout); printf("\n"); fflush(stdout);
+        //cotnum(TT, stdout); printf("\n"); fflush(stdout);
         add(BB,TT,BB);        /* BB^2 = DD mod DG^2 */
         multiply(DG,DG,AA);   /* AA = DG*DG         */
         xgcd(DG,DD,IG,IG,IG); /* IG = 1/DG mod DD  */
-
+        cotnum(AA, stdout); fflush(stdout);
+        cotnum(BB, stdout); fflush(stdout);
+        //cotnum(DG, stdout); fflush(stdout);
+        //cotnum(DD, stdout); fflush(stdout);
+        cotnum(TT, stdout); fflush(stdout);
+        cotnum(IG, stdout); fflush(stdout);
+        
         r1[0]=r2[0]=0;
         for (k=1;k<=mm;k++) 
         { /* find roots of quadratic mod each prime */
             s=subdiv(BB,epr[k],TT);
             r=subdiv(AA,epr[k],TT);
+            printf("(%d ", r);
             r=invers(r,epr[k]);     /* r = 1/AA mod p */
+            
+            printf("%d %d %d) ", s, r, epr[k]); fflush(stdout);
+            
             s1=(epr[k]-s+rp[k]);
             s2=(epr[k]-s+epr[k]-rp[k]);
+            printf("[%d %d] ", s1, s2);
             r1[k]=smul(s1,r,epr[k]);
             r2[k]=smul(s2,r,epr[k]);
         }
-        //printf("A"); fflush(stdout);
+
+        for(k=1; k<=mm; k++)
+        {
+            printf("%d ", r1[k]);
+            fflush(stdout);
+        }
+        puts("");
+        for(k=1; k<=mm; k++)
+        {
+            printf("%d ", r2[k]);
+            fflush(stdout);
+        }
+        puts("");
+        if(r2[mm] != 8 && r2[mm] != 0) while(1);
+        
         for (ptr=(-NS);ptr<NS;ptr++)
         { /* sieve over next period */
-            //printf("D"); fflush(stdout);
             la=(long)ptr*SSIZE;
             SV=(unsigned int *)sieve;
             for (i=0;i<SSIZE/sizeof(int);i++) *SV++=0;
@@ -781,13 +844,10 @@ int main()
                 if (s1==s2) continue;
                 for (j=s2;j<SSIZE;j+=epri) sieve[j]+=logpi;
             }
-            //printf("D");fflush(stdout);
+
             for (a=0;a<SSIZE;a++)
             { /* main loop - look for fully factored residues */
-                //printf("D"); fflush(stdout);
-                //printf("%d %d\n", sieve[a], threshold); fflush(stdout);
                 if (sieve[a]<threshold) continue;
-                //printf("E"); fflush(stdout);
                 lptr=la+a;
                 lgconv(lptr,TT);
                 S=0;
@@ -802,9 +862,7 @@ int main()
                 copy(VV,TT);
                 e[0]=S;
                 for (k=1;k<=mm;k++) e[k]=0;
-                //printf("C"); fflush(stdout);
                 if (!factored(lptr,TT)) continue;
-                //printf("B"); fflush(stdout);
                 if (gotcha())
                 { /* factors found! */
                     egcd(TT,NN,PP);
@@ -823,4 +881,5 @@ int main()
     }
     return 0;
 }
+
 
