@@ -18,62 +18,49 @@
 #define forever while(1)
 #define TRUE 1
 #define FALSE 0
-#define big mpz_t
-#define BOOL char
+typedef mpz_t big;
+typedef char BOOL;
 #define MR_TOOBIG 0x7FFFFFFF
-#define miracl pinfo
-#define NN N
-#define TT TA
-#define IIA TB
-#define IIB TC
-#define IIC TD
-#define DD D
-#define RR R
-#define VV V
-#define PP P
-#define XX X
-#define YY Y
-#define AA A
-#define BB B
-#define mirsys gmpinit
-#define mip qsieve
-
 typedef struct
 {
     int *PRIMES;
     int NTRY;
 } miracl;
 
-big NN,TT,DD,RR,VV,PP,XX,YY,DG,IG,AA,BB,IIA,IIB,IIC;
-big *x,*y,*z,*w;
-unsigned int **EE,**G;
-int *epr,*r1,*r2,*rp,*b,*pr,*e,*hash;
-unsigned char *logp,*sieve;
-int mm,mlf,jj,nbts,nlp,lp,hmod,hmod2;
-BOOL partial;
-miracl *mip;
-
-#define spmd qsieve_powmod
-#define size qsieve_getsize
-#define mad qsieve_muladddiv
-#define cotnum qsieve_outnum
-#define divide qsieve_divide
-#define compare qsieve_compare
-#define invers qsieve_getinvers
-#define sqrmp qsieve_sqrmp
-#define mr_alloc qsieve_alloc
-#define gprime qsieve_gprime
-#define xgcd qsieve_extgcd
+static big NN,TT,DD,RR,VV,PP,XX,YY,DG,IG,AA,BB,IIA,IIB,IIC;
+static big *x,*y,*z,*w;
+static unsigned int **EE,**G;
+static int *epr,*r1,*r2,*rp,*b,*pr,*e,*hash;
+static unsigned char *logp,*sieve;
+static int mm,mlf,jj,nbts,nlp,lp,hmod,hmod2;
+static BOOL partial;
+static miracl *mip;
 
 int spmd(int x, int n, int m);
 int size(big x);
+void convert(int n, big x);
+void expint(int a, int n, big x);
 void mad(big x, big y, big z, big w, big q, big r);
 int cotnum(big x, FILE *fout);
+int cinnum(big x, FILE *fin);
 void divide(big x, big y, big z);
+void add(big x, big y, big z);
+int egcd(big x, big y, big z);
+BOOL isprime(big x);
+void subtract(big x, big y, big z);
 int compare(big x, big y);
+void absol(big x, big y);
+void multiply(big x, big y, big z);
+void lgconv(long n, big x);
 int invers(int x, int y);
 int sqrmp(int x, int m);
 void gprime(int maxp);
+void incr(big x, int n, big z);
+void decr(big x, int n, big z);
+BOOL nroot(big x, int n, big w);
+void negify(big x, big y);
+int logb2(big x);
+void powmod(big x, big y, big n, big w);
 
 miracl *mirsys(int nd, int nb)
 {
@@ -86,24 +73,6 @@ miracl *mirsys(int nd, int nb)
 #define subdiv(x,n,z) mpz_tdiv_q_ui(z, x, n)
 #define remain(x,n) mpz_tdiv_r_ui(IIA, x, n)
 #define copy(x, y) if(x!=y) mpz_set(y, x)
-#define convert(n, x) mpz_set_si(x, n)
-#define expint(a, n, x) mpz_ui_pow_ui(x, a, n)
-#define cinnum(x, fin) mpz_inp_str(x, fin, 10)
-#define add(x, y, z) mpz_add(z, x, y)
-#define subtract(x, y, z) mpz_sub(z, x, y)
-#define absol(x, y) mpz_abs(y, x)
-#define multiply(x, y, z) mpz_mul(z, x, y)
-#define lgconv(n, x) convert(n, x)
-#define egcd(x,y,z) (mpz_gcd(z, x, y),size(z))
-#define isprime(x) (mpz_probab_prime_p(x, mip->NTRY) ? TRUE : FALSE)
-#define incr(x,n,z) mpz_add_ui(z, x, n)
-#define decr(x,n,z) mpz_sub_ui(z, x, n)
-#define nroot(x,n,w) mpz_root(w, x, n)
-#define negify(x,y) mpz_neg(y, x)
-#define logb2(x) mpz_sizeinbase(x, 2)
-#define powmod(x, y, n, w) mpz_powm_sec(w, x, y, n)
-#define smul(x, y, n) ((int)((((long long)(x))*((long long)(y))) % ((long long)(n))))
-#define power(x,n,z,w) (convert(n, IIA),powmod(x, IIA, z, w))
 
 int spmd(int x, int n, int m)
 {
@@ -127,6 +96,16 @@ int size(big x)
     return (t<0 ? -MR_TOOBIG : +MR_TOOBIG);
 }
 
+void convert(int n, big x)
+{
+    mpz_set_si(x, n);
+}
+
+void expint(int a, int n, big x)
+{
+    mpz_ui_pow_ui(x, a, n);
+}
+
 void mad(big x, big y, big z, big w, big q, big r)
 {
     multiply(x, y, IIA);
@@ -147,11 +126,14 @@ int cotnum(big x, FILE *fout)
 {
     int t;
     t = mpz_out_str(fout, 10, x);
-    puts("");
-    fflush(stdout);
+    puts(""); fflush(stdout);
     return t;
 }
 
+int cinnum(big x, FILE *fin)
+{
+    return mpz_inp_str(x, fin, 10);
+}
 
 void divide(big x, big y, big z)
 {
@@ -161,6 +143,28 @@ void divide(big x, big y, big z)
     if(y != z) copy(IIB, z);
 }
 
+void add(big x, big y, big z)
+{
+    mpz_add(z, x, y);
+}
+
+int egcd(big x, big y, big z)
+{
+    mpz_gcd(z, x, y);
+    return size(z);
+}
+
+BOOL isprime(big x)
+{
+    if(mpz_probab_prime_p(x, mip->NTRY)) return TRUE;
+    return FALSE;
+    //return mpz_probab_prime_p(x, 20);
+}
+
+void subtract(big x, big y, big z)
+{
+    mpz_sub(z, x, y);
+}
 
 int compare(big x, big y)
 {
@@ -169,6 +173,21 @@ int compare(big x, big y)
     if(t > 0) return 1;
     if(t < 0) return -1;
     return 0;
+}
+
+void absol(big x, big y)
+{
+    mpz_abs(y, x);
+}
+
+void multiply(big x, big y, big z)
+{
+    mpz_mul(z, x, y);
+}
+
+void lgconv(long n, big x)
+{
+    convert(n, x);
 }
 
 int invers(int x, int y)
@@ -182,6 +201,13 @@ int invers(int x, int y)
 
 int sqrmp(int x, int m)
 {
+    /*
+    convert(x, IIA);
+    convert(m, IIB);
+    mpz_sqrt(IIA, IIA);
+    mpz_tdiv_r(IIC, IIA, IIB);
+    return size(IIC);
+    */
     long long i;
     for(i=0; i<m; i++)
     {
@@ -221,19 +247,62 @@ void gprime(int maxp)
     free(vis);
     if(mip->PRIMES[k-1] < maxp)
     {
-        printf("QSIEVE ERROR: NUMBER IS TOO LARGE\n");
+        printf("ERROR\n");
         fflush(stdout);
         exit(0);
     }
 }
 
+void incr(big x, int n, big z)
+{
+    mpz_add_ui(z, x, n);
+}
+
+void decr(big x, int n, big z)
+{
+    mpz_sub_ui(z, x, n);
+}
+
+BOOL nroot(big x, int n, big w)
+{
+    return mpz_root(w, x, n);
+}
+
+void negify(big x, big y)
+{
+    mpz_neg(y, x);
+}
+
+int logb2(big x)
+{
+    return mpz_sizeinbase(x, 2);
+}
+
+void powmod(big x, big y, big n, big w)
+{
+    mpz_powm_sec(w, x, y, n);
+}
 
 void* mr_alloc(int len, int size)
 {
     void *p;
     p = malloc(len * size);
+    /*
+    if(p == NULL)
+    {
+        printf("ORZ!!!\n");
+        fflush(stdout);
+        while(1);
+    }
+    */
     memset(p, 0, len*size);
     return p;
+}
+
+void power(big x, long n, big z, big w)
+{
+    convert(n, IIA);
+    powmod(x, IIA, z, w);
 }
 
 int xgcd(big x, big y, big xd, big yd, big z)
@@ -254,9 +323,14 @@ int xgcd(big x, big y, big xd, big yd, big z)
     {
         copy(IIA, xd);
     }
+    //mpz_gcdext(z, xd, yd, x, y);
     return size(IIC);
 }
 
+int smul(int x, int y, int n)
+{
+    return (int)((((long long)x)*((long long)y)) % ((long long)n));
+}
 int knuth(int mm,int *epr,big N,big D)
 { /* Input number to be factored N and find best multiplier k  *
    * for use over a factor base epr[] of size mm.  Set D=k.N.  */
@@ -383,7 +457,21 @@ BOOL gotcha(void)
         expint(epr[k],r,TT);
         multiply(TT,YY,YY);
     }
-
+/* debug only
+	printf("\nX= ");
+    cotnum(XX,stdout);
+	printf("Y= ");
+    cotnum(YY,stdout);
+    if (e[0]==1) printf("-1");
+    else printf("1");
+    for (k=1;k<=mm;k++)
+    {
+        if (e[k]==0) continue;
+        printf(".%d",epr[k]);
+    }
+    if (partial) printf(".%d\n",lp);
+    else printf("\n"); */
+    //printf("A");
     if (partial)
     { /* factored with large prime */
         if (!found)
@@ -405,6 +493,9 @@ BOOL gotcha(void)
             fflush(stdout);
             mad(XX,z[hp],XX,NN,NN,XX);
             mad(YY,w[hp],YY,NN,NN,YY);
+            //cotnum(XX);
+            //cotnum(YY);
+            //cotnum(NN);
             for (n=0,rb=0,j=0;j<=mm;j++)
             {
                 t=(G[hp][n]>>rb);
@@ -439,6 +530,7 @@ BOOL gotcha(void)
             i=b[k];
             mad(XX,x[i],XX,NN,NN,XX);    /* This is very inefficient -  */
             mad(YY,y[i],YY,NN,NN,YY);    /* There must be a better way! */
+            //cotnum(NN, stdout); cotnum(XX, stdout); cotnum(YY, stdout);
             for (n=0,rb=0,j=0;j<=mm;j++)
             { /* Gaussian elimination */
                 t=(EE[i][n]>>rb);
@@ -452,6 +544,8 @@ BOOL gotcha(void)
             convert(epr[j],TT);
             power(TT,e[j]/2,NN,TT);
             mad(YY,TT,YY,NN,NN,YY);
+            //printf("\nx-> ");
+            //cotnum(NN, stdout); cotnum(XX, stdout); cotnum(YY, stdout);
         }
         if (!found)
         { /* store details in E, x and y for later */
@@ -467,7 +561,16 @@ BOOL gotcha(void)
             printf("%5d",jj);
         }
     }
-
+/*
+    for (i=0;i<mm;i++)
+    {
+        for (j=0;j<1+mm/(8*sizeof(int));j++)
+        {
+            printf("%x",EE[i][j]);
+        }
+        printf("\n");
+    }
+*/
     if (found)
     { /* check for false alarm */
         printf("\ntrying...\n");
@@ -483,18 +586,18 @@ int initv(void)
     int i,d,pak,k,maxp;
     double dp;
 
-    mpz_init(NN); 
-    mpz_init(TT);
-    mpz_init(DD);
-    mpz_init(RR);
-    mpz_init(VV);
-    mpz_init(PP); 
-    mpz_init(XX); 
-    mpz_init(YY);
-    mpz_init(DG);
-    mpz_init(IG);
-    mpz_init(AA);
-    mpz_init(BB); 
+    mpz_init(NN); //NN=mirvar(0); 
+    mpz_init(TT); //TT=mirvar(0);
+    mpz_init(DD); //DD=mirvar(0);
+    mpz_init(RR); //RR=mirvar(0);
+    mpz_init(VV); //VV=mirvar(0);
+    mpz_init(PP); //PP=mirvar(0);
+    mpz_init(XX); //XX=mirvar(0);
+    mpz_init(YY); //YY=mirvar(0);
+    mpz_init(DG); //DG=mirvar(0);
+    mpz_init(IG); //IG=mirvar(0);
+    mpz_init(AA); //AA=mirvar(0);
+    mpz_init(BB); //BB=mirvar(0);
     mpz_init(IIA);
     mpz_init(IIB);
     mpz_init(IIC);
@@ -567,13 +670,19 @@ int initv(void)
 
     for (i=0;i<=mm;i++)
     {
-        mpz_init(x[i]);
-        mpz_init(y[i]);
+        mpz_init(x[i]);//x[i]=mirvar(0);
+    }
+    for (i=0;i<=mm;i++)
+    {
+        mpz_init(y[i]);//y[i]=mirvar(0);
     }
     for (i=0;i<=mlf;i++)
     {
-        mpz_init(z[i]);
-        mpz_init(w[i]);
+        mpz_init(z[i]);//z[i]=mirvar(0);
+    }
+    for (i=0;i<=mlf;i++)
+    {
+        mpz_init(w[i]);//w[i]=mirvar(0);
     }
 
     EE=(unsigned int **)mr_alloc(mm+1,sizeof(unsigned int *));
@@ -675,6 +784,9 @@ int main()
         multiply(DG,DG,AA);   /* AA = DG*DG         */
         xgcd(DG,DD,IG,IG,IG); /* IG = 1/DG mod DD  */
         
+        //cotnum(DG, stdout);
+        //scanf("%*c");
+        
         r1[0]=r2[0]=0;
         for (k=1;k<=mm;k++) 
         { /* find roots of quadratic mod each prime */
@@ -693,6 +805,7 @@ int main()
             r1[k]=smul(s1,r,epr[k]);
             r2[k]=smul(s2,r,epr[k]);
         }
+        //if(r2[mm] != 8 && r2[mm] != 0) while(1);
         
         for (ptr=(-NS);ptr<NS;ptr++)
         { /* sieve over next period */
