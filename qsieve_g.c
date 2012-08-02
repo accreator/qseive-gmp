@@ -5,19 +5,18 @@
  *   Math. Comp. Vol. 48, 177, Jan. 1987, pp329-339
  */
 
-#include <gmp.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h> 
+//#include <gmp.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <math.h> 
 
-#define SSIZE 100000    /* Maximum sieve size            */
-
-#define PSIZE 200000
+//#define SSIZE 100000    /* Maximum sieve size            */
+//#define PSIZE 200000
+//#define TRUE 1
+//#define FALSE 0
 
 #define forever while(1)
-#define TRUE 1
-#define FALSE 0
 #define big mpz_t
 #define BOOL char
 #define MR_TOOBIG 0x7FFFFFFF
