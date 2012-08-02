@@ -43,8 +43,7 @@ pinfo *gmpinit(int nd, int nb)
 
 int qsieve_powmod(int x, int n, int m)
 {
-    long long ans = 1;
-    long long t = x;
+    long long ans = 1, t = x;
     while(n > 0)
     {
         if(n & 1) ans = (ans * t) % m;
@@ -77,7 +76,6 @@ int qsieve_outnum(mpz_t x, FILE *fout)
     fflush(stdout);
     return t;
 }
-
 
 void qsieve_divide(mpz_t x, mpz_t y, mpz_t z)
 {
@@ -207,8 +205,7 @@ int knuth(int mm,int *epr,mpz_t N,mpz_t D)
             {
                 epr[++j]=p;
                 dp=(double)p;
-                if(kk%p==0) fks+=log(dp)/dp;
-                else fks+=2*log(dp)/(dp-1.0);
+                if(kk%p==0) fks+=log(dp)/dp; else fks+=2*log(dp)/(dp-1.0);
             }
         }
         if(fks>top)
@@ -312,8 +309,6 @@ char gotcha(void)
         }
         if(found)
         {
-            printf("\b\b\b\b\b\b*");
-            fflush(stdout);
             qsieve_muladddiv(X,z[hp],X,N,N,X);
             qsieve_muladddiv(Y,w[hp],Y,N,N,Y);
             for(n=0,rb=0,j=0;j<=mm;j++)
@@ -331,11 +326,6 @@ char gotcha(void)
             mpz_mul_si(Y, Y, lp);
             qsieve_divide(Y,N,N);
         }
-    }
-    else
-    {
-        printf("\b\b\b\b\b\b ");
-        fflush(stdout);
     }
     if(found)
     {
@@ -361,7 +351,8 @@ char gotcha(void)
         {
             if(e[j]<2) continue;
             mpz_set_si(TA, epr[j]);
-            (mpz_set_si(TB, e[j]/2),mpz_powm_sec(TA, TA, TB, N));
+            mpz_set_si(TB, e[j]/2);
+            mpz_powm_sec(TA, TA, TB, N);
             qsieve_muladddiv(Y,TA,Y,N,N,Y);
         }
         if(!found)
@@ -375,16 +366,20 @@ char gotcha(void)
                 if(++rb==nbts) n++,rb=0;
             }
             jj++;
-            printf("%5d",jj);
+            printf("\b\b\b\b%3d%%",100*jj/mm);
+            fflush(stdout);
         }
     }
 
     if(found)
     {
-        printf("\ntrying...\n");
         mpz_add(TA, X, Y);
         if(qsieve_compare(X,Y)==0 || qsieve_compare(TA,N)==0) found=FALSE;
-        if(!found) printf("working... %5d",jj);
+        if(!found)
+        {
+            printf("\b\b\b\b%3d%%",100*jj/mm);
+            fflush(stdout);
+        }
     }
     return found;
 }
@@ -394,35 +389,21 @@ int initv(void)
     int i,d,pak,k,maxp;
     double dp;
 
-    mpz_init(N);
-    mpz_init(TA);
-    mpz_init(D);
-    mpz_init(R);
-    mpz_init(V);
-    mpz_init(P);
-    mpz_init(X);
-    mpz_init(Y);
-    mpz_init(DG);
-    mpz_init(IG);
-    mpz_init(A);
-    mpz_init(B);
-    mpz_init(TB);
-    mpz_init(TC);
-    mpz_init(TD);
+    mpz_inits(N, TA, D, R, V, P, X, Y, DG, IG, A, B, TB, TC, TD, NULL);
 
     nbts=8*sizeof(int);
 
-    printf("input number to be factored N= \n");
+    printf("Input N= \n");
     d=mpz_inp_str(N, stdin, 10);
     if((mpz_probab_prime_p(N, qsieve->NTRY) ? TRUE : FALSE))
     {
-        printf("this number is prime!\n");
+        printf("N is prime!\n");
         return (-1);
     }
 
     if(d<8) mm=d;
+    else if(d>20) mm=(d*d*d*d)/4096;
     else mm=25;
-    if(d>20) mm=(d*d*d*d)/4096;
 
     dp=(double)2*(double)(mm+100);
     maxp=(int)(dp*(log(dp*log(dp))));
@@ -434,20 +415,13 @@ int initv(void)
 
     if(mpz_root(R, D, 2))
     {
-        printf("%dN is a perfect square!\n",k);
-        printf("factors are\n");
-        if((mpz_probab_prime_p(R, qsieve->NTRY) ? TRUE : FALSE)) printf("prime factor     ");
-        else printf("composite factor ");
+        printf("Factors are\n");
         qsieve_outnum(R,stdout);
         qsieve_divide(N,R,N);
-        if((mpz_probab_prime_p(N, qsieve->NTRY) ? TRUE : FALSE)) printf("prime factor     ");
-        else printf("composite factor ");
         qsieve_outnum(N,stdout);
-        return (-1);
+        return -1;
     }
 
-    printf("using multiplier k= %d\n",k);
-    printf("and %d small primes as factor base\n",mm);
     qsieve_gprime(0);
 
     mlf=2*mm;
@@ -491,8 +465,7 @@ int initv(void)
         EE[i]=(unsigned int *)qsieve_alloc(pak,sizeof(int));
     }
 
-    for(i=0;i<=mlf;i++)
-        G[i]=(unsigned int *)qsieve_alloc(pak,sizeof(int));
+    for(i=0;i<=mlf;i++) G[i]=(unsigned int *)qsieve_alloc(pak,sizeof(int));
     return 1;
 }
 
@@ -509,7 +482,7 @@ int main()
 
     hmod=2*mlf+1;
     mpz_set_si(TA, hmod);
-    while(!(mpz_probab_prime_p(TA, qsieve->NTRY) ? TRUE : FALSE)) mpz_sub_ui(TA, TA, 2);
+    while(!mpz_probab_prime_p(TA, qsieve->NTRY)) mpz_sub_ui(TA, TA, 2);
     hmod=qsieve_getsize(TA);
     hmod2=hmod-2;
     for(k=0;k<hmod;k++) hash[k]=(-1);
@@ -547,7 +520,7 @@ int main()
     mpz_root(DG, DG, 2);
     if(mpz_tdiv_q_ui(TA, DG, 2)==0) mpz_add_ui(DG, DG, 1);
     if(mpz_tdiv_q_ui(TA, DG, 4)==1) mpz_add_ui(DG, DG, 2);
-    printf("working...     0");
+    printf("  0%");
 
     while(1)
     {
@@ -593,8 +566,8 @@ int main()
                 s1 = s2;
                 s2 = t;
             }
-            r1[k]=((int)((((long long)(s1))*((long long)(r))) % ((long long)(epr[k]))));
-            r2[k]=((int)((((long long)(s2))*((long long)(r))) % ((long long)(epr[k]))));
+            r1[k]=(int)((((long long)s1)*((long long)r)) % ((long long)epr[k]));
+            r2[k]=(int)((((long long)s2)*((long long)r)) % ((long long)epr[k]));
         }
         
         for(ptr=(-NS);ptr<NS;ptr++)
@@ -637,14 +610,11 @@ int main()
                 if(!factored(lptr,TA)) continue;
                 if(gotcha())
                 {
-                    (mpz_gcd(P, TA, N),qsieve_getsize(P));
-                    printf("factors are\n");
-                    if((mpz_probab_prime_p(P, qsieve->NTRY) ? TRUE : FALSE)) printf("prime factor     ");
-                    else printf("composite factor ");
+                    mpz_gcd(P, TA, N);
+                    qsieve_getsize(P);
+                    printf("\b\b\b\b100%\nFactors are\n");
                     qsieve_outnum(P,stdout);
                     qsieve_divide(N,P,N);
-                    if((mpz_probab_prime_p(N, qsieve->NTRY) ? TRUE : FALSE)) printf("prime factor     ");
-                    else printf("composite factor ");
                     qsieve_outnum(N,stdout);
                     return 0;
                 }
